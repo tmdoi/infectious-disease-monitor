@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+
+# Cache & data
+data/cache/
+!data/cache/.gitkeep
+
+# macOS
+.DS_Store
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Claude Code local settings
+.claude/settings.local.json
