@@ -53,11 +53,15 @@ with st.sidebar:
             if articles:
                 st.markdown("**関連記事**")
                 for article in articles:
-                    st.markdown(f"- {article['title']}  \n  `{article['date']}`")
+                    st.markdown(
+                        f'<a href="{article["url"]}" target="_blank">{article["title"]}</a>'
+                        f"<br><small>{article['date']}</small><br>",
+                        unsafe_allow_html=True,
+                    )
             else:
                 st.write("記事データがありません。")
         else:
-            st.warning(f"**{iso3}** のデータはありません。")
+            st.warning("この国のデータはありません。")
 
         if st.button("選択を解除", use_container_width=True):
             st.session_state.selected_iso3 = None
