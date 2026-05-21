@@ -3,6 +3,7 @@
 import pandas as pd
 import streamlit as st
 
+from src.data.mock_articles import ARTICLES
 from src.visualizers.choropleth import build
 
 st.set_page_config(
@@ -10,9 +11,6 @@ st.set_page_config(
     page_icon="🦠",
     layout="wide",
 )
-
-st.title("🦠 新興感染症 世界モニタリングダッシュボード")
-st.caption("WHO / ECDC のアウトブレイク情報をリアルタイムで可視化します。")
 
 MOCK_DATA = [
     {"iso3": "COD", "country": "コンゴ民主共和国", "disease": "エボラ出血熱", "count": 5},
@@ -31,6 +29,43 @@ if "data" not in st.session_state:
     st.session_state.data = None
 if "last_updated" not in st.session_state:
     st.session_state.last_updated = None
+if "selected_iso3" not in st.session_state:
+    st.session_state.selected_iso3 = None
+
+# ── Sidebar ──────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.header("📋 選択中の国")
+
+    iso3 = st.session_state.selected_iso3
+
+    if iso3 is None:
+        st.info("地図上の国をクリックしてください")
+    else:
+        df_all = pd.DataFrame(MOCK_DATA)
+        rows = df_all[df_all["iso3"] == iso3]
+
+        if not rows.empty:
+            row = rows.iloc[0]
+            st.subheader(row["country"])
+            st.caption(f"疾患: {row['disease']}　件数: {row['count']}")
+            st.divider()
+            articles = ARTICLES.get(iso3, [])
+            if articles:
+                st.markdown("**関連記事**")
+                for article in articles:
+                    st.markdown(f"- {article['title']}  \n  `{article['date']}`")
+            else:
+                st.write("記事データがありません。")
+        else:
+            st.warning(f"**{iso3}** のデータはありません。")
+
+        if st.button("選択を解除", use_container_width=True):
+            st.session_state.selected_iso3 = None
+            st.rerun()
+
+# ── Main area ─────────────────────────────────────────────────────────────────
+st.title("🦠 新興感染症 世界モニタリングダッシュボード")
+st.caption("WHO / ECDC のアウトブレイク情報をリアルタイムで可視化します。")
 
 col_btn, col_status = st.columns([1, 4])
 with col_btn:
@@ -44,7 +79,7 @@ with col_status:
 if fetch_clicked:
     with st.spinner("データを取得中..."):
         import time
-        time.sleep(0.8)  # simulate network latency
+        time.sleep(0.8)
         st.session_state.data = MOCK_DATA
         from datetime import datetime
         st.session_state.last_updated = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -54,22 +89,13 @@ if st.session_state.data:
     df = pd.DataFrame(st.session_state.data)
 
     st.subheader("世界アウトブレイクマップ")
-    fig = build(df)
-    selected = st.plotly_chart(fig, use_container_width=True, on_select="rerun")
+    selected = st.plotly_chart(build(df), use_container_width=True, on_select="rerun")
 
-    clicked_iso3 = None
     if selected and selected.get("selection", {}).get("points"):
         clicked_iso3 = selected["selection"]["points"][0].get("location")
-
-    if clicked_iso3:
-        rows = df[df["iso3"] == clicked_iso3]
-        if not rows.empty:
-            row = rows.iloc[0]
-            st.subheader(f"📌 {row['country']} の詳細")
-            st.metric("アウトブレイク件数", row["count"])
-            st.write(f"**疾患:** {row['disease']}")
-        else:
-            st.info("選択した国のデータはありません。")
+        if clicked_iso3 and clicked_iso3 != st.session_state.selected_iso3:
+            st.session_state.selected_iso3 = clicked_iso3
+            st.rerun()
 
     st.divider()
     st.subheader("アウトブレイク一覧")
