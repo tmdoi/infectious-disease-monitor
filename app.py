@@ -216,6 +216,25 @@ with st.sidebar:
     )
 
     st.divider()
+
+    # 配信元一覧
+    all_articles_sidebar = st.session_state.get("articles_who", []) + st.session_state.get("articles_ja", [])
+    if all_articles_sidebar:
+        from collections import Counter
+        def _display_label(a: dict) -> str:
+            pub = a.get("publisher")
+            if pub:
+                return pub
+            src = a.get("source", "")
+            return _SOURCE_LABEL.get(src, src)
+
+        counts = Counter(_display_label(a) for a in all_articles_sidebar)
+        st.header("📡 配信元一覧")
+        st.caption(f"全 {len(all_articles_sidebar)} 件")
+        for label, n in counts.most_common():
+            st.markdown(f"- {label}: **{n}**")
+        st.divider()
+
     st.header("📋 選択中の国")
 
     iso3 = st.session_state.selected_iso3
@@ -235,7 +254,7 @@ with st.sidebar:
         if country_articles:
             st.markdown("**関連記事**")
             for a in sorted(country_articles, key=lambda x: x.get("date", ""), reverse=True):
-                label = _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
+                label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
                 st.markdown(
                     f'<a href="{a["url"]}" target="_blank">{a["title"]}</a>'
                     f'<br><small>{a.get("date", "日付不明")} {label} — {a.get("disease_ja", "")}</small><br>',
@@ -340,7 +359,7 @@ if _all_map_articles or st.session_state.articles_who:
     display_articles = [
         {
             "日付": a.get("date", ""),
-            "ソース": _SOURCE_LABEL.get(a.get("source", ""), a.get("source", "")),
+            "ソース": a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", "")),
             "疾患": a.get("disease_ja", ""),
             "国": ", ".join(
                 country_parser.iso3_to_display_name(c) for c in a.get("iso3_list", [])
@@ -370,7 +389,7 @@ if _all_map_articles or st.session_state.articles_who:
         st.divider()
         st.subheader("📰 日本語関連ニュース（国不明）")
         for a in sorted(_ja_no_country, key=lambda x: x.get("date", ""), reverse=True):
-            label = _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
+            label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
             st.markdown(
                 f'<a href="{a["url"]}" target="_blank">{a["title"]}</a>'
                 f'<br><small>{a.get("date", "日付不明")} {label} — {a.get("disease_ja", "")}</small><br>',
