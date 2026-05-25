@@ -21,6 +21,7 @@ DISEASE_KEYWORDS: dict[str, str] = {
     "Yellow fever": "黄熱",
     "Chikungunya": "チクングニア熱",
     "Crimean-Congo": "クリミア・コンゴ出血熱",
+    "Measles": "麻疹",
 }
 
 # De-duplicated list of Japanese names for UI multiselect

@@ -6,6 +6,7 @@ import pandas as pd
 import streamlit as st
 
 from src import cache
+from src.data.mock_articles import ARTICLES as _MOCK_ARTICLES
 from src.fetchers import ecdc_cdtr, who_don
 from src.parsers import country as country_parser
 from src.parsers import disease_filter
@@ -36,6 +37,40 @@ def _fetch_all() -> tuple[list[dict], list[dict], str]:
     return filtered_who, raw_ecdc, ts
 
 
+# ISO3 → 疾患名(日本語) のモックマッピング
+_MOCK_DISEASE_MAP: dict[str, str] = {
+    "COD": "エボラ出血熱",
+    "NGA": "ラッサ熱",
+    "CHN": "H5N1型鳥インフルエンザ",
+    "BRA": "デング熱",
+    "IND": "ニパウイルス感染症",
+    "SAU": "MERS-CoV",
+    "SSD": "コレラ",
+    "BGD": "デング熱",
+    "UGA": "マールブルグ病",
+    # PER(Oropouche) は対象疾患外のため除外
+}
+
+
+def _mock_fallback_articles() -> list[dict]:
+    """Convert mock ARTICLES to the standard article format as a last-resort fallback."""
+    result = []
+    for iso3, articles in _MOCK_ARTICLES.items():
+        disease_ja = _MOCK_DISEASE_MAP.get(iso3)
+        if not disease_ja:
+            continue
+        for a in articles:
+            result.append({
+                "title": a["title"],
+                "url": a["url"],
+                "date": a["date"],
+                "source": "WHO DON (サンプルデータ)",
+                "disease_ja": disease_ja,
+                "iso3_list": [iso3],
+            })
+    return result
+
+
 def _build_map_df(articles: list[dict], selected_diseases: list[str]) -> pd.DataFrame:
     """Expand articles to (iso3, disease) rows, then aggregate per country."""
     rows = [
@@ -64,9 +99,28 @@ def _build_map_df(articles: list[dict], selected_diseases: list[str]) -> pd.Data
 if "articles_who" not in st.session_state:
     who_cached, who_ts = cache.load("who_don")
     ecdc_cached, _ = cache.load("ecdc_cdtr")
-    st.session_state.articles_who = who_cached
-    st.session_state.articles_ecdc = ecdc_cached
-    st.session_state.last_updated = who_ts
+    if who_cached:
+        st.session_state.articles_who = who_cached
+        st.session_state.articles_ecdc = ecdc_cached
+        st.session_state.last_updated = who_ts
+        st.session_state._using_mock = False
+    else:
+        # キャッシュなし → 自動取得を試みる
+        _placeholder = st.empty()
+        with _placeholder.container():
+            with st.spinner("初回データ取得中…"):
+                try:
+                    who_articles, ecdc_reports, ts = _fetch_all()
+                    st.session_state.articles_who = who_articles
+                    st.session_state.articles_ecdc = ecdc_reports
+                    st.session_state.last_updated = ts
+                    st.session_state._using_mock = False
+                except Exception:
+                    st.session_state.articles_who = _mock_fallback_articles()
+                    st.session_state.articles_ecdc = []
+                    st.session_state.last_updated = None
+                    st.session_state._using_mock = True
+        _placeholder.empty()
 
 if "selected_iso3" not in st.session_state:
     st.session_state.selected_iso3 = None
@@ -93,7 +147,6 @@ with st.sidebar:
         country_name = country_parser.iso3_to_display_name(iso3)
         st.subheader(country_name)
 
-        # Articles for this country
         country_articles = [
             a for a in st.session_state.articles_who
             if iso3 in a.get("iso3_list", [])
@@ -121,6 +174,9 @@ with st.sidebar:
 st.title("🦠 新興感染症 世界モニタリングダッシュボード")
 st.caption("WHO / ECDC のアウトブレイク情報をリアルタイムで可視化します。")
 
+if st.session_state.get("_using_mock"):
+    st.warning("⚠️ サンプルデータ表示中 — 「データ取得」ボタンで実データに切り替えできます。")
+
 col_btn, col_status = st.columns([1, 4])
 with col_btn:
     fetch_clicked = st.button("🔄 データ取得", type="primary", use_container_width=True)
@@ -137,20 +193,27 @@ if fetch_clicked:
             st.session_state.articles_who = who_articles
             st.session_state.articles_ecdc = ecdc_reports
             st.session_state.last_updated = ts
+            st.session_state._using_mock = False
             st.success(
                 f"取得完了 — WHO DON: {len(who_articles)} 件 / ECDC CDTR: {len(ecdc_reports)} 件"
             )
         except Exception as e:
             st.error(f"データ取得中にエラーが発生しました: {e}")
-            # Attempt cache fallback
+            # キャッシュフォールバック
             if not st.session_state.articles_who:
                 cached_who, who_ts = cache.load("who_don")
                 cached_ecdc, _ = cache.load("ecdc_cdtr")
-                st.session_state.articles_who = cached_who
-                st.session_state.articles_ecdc = cached_ecdc
-                if who_ts:
+                if cached_who:
+                    st.session_state.articles_who = cached_who
+                    st.session_state.articles_ecdc = cached_ecdc
                     st.session_state.last_updated = who_ts
                     st.warning(f"キャッシュデータを使用しています（更新: {who_ts}）")
+                else:
+                    # キャッシュもなければモックを使用
+                    st.session_state.articles_who = _mock_fallback_articles()
+                    st.session_state.articles_ecdc = []
+                    st.session_state._using_mock = True
+                    st.warning("実データ取得に失敗しました。サンプルデータを表示しています。")
 
 # ── Map ───────────────────────────────────────────────────────────────────────
 
