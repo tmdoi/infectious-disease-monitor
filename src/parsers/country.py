@@ -134,6 +134,93 @@ _ISO3_JA: dict[str, str] = {
 }
 
 
+# Japanese country name → ISO3 (for Yahoo Japan article title parsing)
+_MANUAL_JA: dict[str, str] = {
+    "日本": "JPN",
+    "米国": "USA",
+    "アメリカ": "USA",
+    "アメリカ合衆国": "USA",
+    "中国": "CHN",
+    "韓国": "KOR",
+    "北朝鮮": "PRK",
+    "ドイツ": "DEU",
+    "フランス": "FRA",
+    "イタリア": "ITA",
+    "スペイン": "ESP",
+    "英国": "GBR",
+    "イギリス": "GBR",
+    "ロシア": "RUS",
+    "ウクライナ": "UKR",
+    "オーストラリア": "AUS",
+    "カナダ": "CAN",
+    "ブラジル": "BRA",
+    "メキシコ": "MEX",
+    "コロンビア": "COL",
+    "ペルー": "PER",
+    "エクアドル": "ECU",
+    "ボリビア": "BOL",
+    "アルゼンチン": "ARG",
+    "ベネズエラ": "VEN",
+    "インド": "IND",
+    "パキスタン": "PAK",
+    "バングラデシュ": "BGD",
+    "フィリピン": "PHL",
+    "インドネシア": "IDN",
+    "マレーシア": "MYS",
+    "シンガポール": "SGP",
+    "タイ": "THA",
+    "ベトナム": "VNM",
+    "ミャンマー": "MMR",
+    "カンボジア": "KHM",
+    "台湾": "TWN",
+    "香港": "HKG",
+    "イラン": "IRN",
+    "イラク": "IRQ",
+    "サウジアラビア": "SAU",
+    "アラブ首長国連邦": "ARE",
+    "UAE": "ARE",
+    "トルコ": "TUR",
+    "シリア": "SYR",
+    "レバノン": "LBN",
+    "イスラエル": "ISR",
+    "パレスチナ": "PSE",
+    "エジプト": "EGY",
+    "ナイジェリア": "NGA",
+    "南アフリカ": "ZAF",
+    "エチオピア": "ETH",
+    "ウガンダ": "UGA",
+    "ケニア": "KEN",
+    "タンザニア": "TZA",
+    "ガーナ": "GHA",
+    "セネガル": "SEN",
+    "ギニア": "GIN",
+    "シエラレオネ": "SLE",
+    "リベリア": "LBR",
+    "コートジボワール": "CIV",
+    "コンゴ民主共和国": "COD",
+    "コンゴ共和国": "COG",
+    "コンゴ": "COD",   # ambiguous; default to DRC as more common in outbreak news
+    "南スーダン": "SSD",
+    "スーダン": "SDN",
+    "ソマリア": "SOM",
+    "イエメン": "YEM",
+    "アフガニスタン": "AFG",
+    "カメルーン": "CMR",
+    "中央アフリカ共和国": "CAF",
+    "中央アフリカ": "CAF",
+    "アンゴラ": "AGO",
+    "モザンビーク": "MOZ",
+    "マラウイ": "MWI",
+    "ザンビア": "ZMB",
+    "ルワンダ": "RWA",
+    "ブルンジ": "BDI",
+    "ハイチ": "HTI",
+    "モンゴル": "MNG",
+    "カザフスタン": "KAZ",
+    "ウズベキスタン": "UZB",
+}
+
+
 def name_to_iso3(name: str) -> str | None:
     """Convert country name to ISO3 code. Returns None if unresolvable."""
     name = name.strip()
@@ -164,6 +251,21 @@ def iso3_to_display_name(iso3: str) -> str:
         return _ISO3_JA[iso3]
     country = pycountry.countries.get(alpha_3=iso3)
     return country.name if country else iso3
+
+
+def extract_countries_from_title_ja(title: str) -> list[str]:
+    """Scan a Japanese-language title for known country names and return ISO3 codes.
+
+    Longer/more-specific names are checked first to avoid partial shadowing
+    (e.g. 'コンゴ民主共和国' matches before 'コンゴ').
+    """
+    iso3_list: list[str] = []
+    seen: set[str] = set()
+    for ja_name, iso3 in sorted(_MANUAL_JA.items(), key=lambda x: len(x[0]), reverse=True):
+        if ja_name in title and iso3 not in seen:
+            iso3_list.append(iso3)
+            seen.add(iso3)
+    return iso3_list
 
 
 def extract_countries_from_title(title: str) -> list[str]:

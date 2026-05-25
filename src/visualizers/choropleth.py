@@ -48,13 +48,22 @@ def build(df: pd.DataFrame) -> go.Figure:
         )
     )
 
-    # Data trace: countries with outbreak data
+    # Data trace: countries with outbreak data.
+    # Custom colorscale ensures count=1 renders as visible orange rather than near-white.
+    # zmin=0 anchors the scale so z=1 maps to ~10% position (clear "#fc8d59").
+    _COLORSCALE = [
+        [0.00, "#fff5f0"],
+        [0.10, "#fc8d59"],
+        [0.40, "#de2d26"],
+        [1.00, "#67000d"],
+    ]
     fig.add_trace(
         go.Choropleth(
             locations=df["iso3"],
             z=df["count"],
+            zmin=0,
             text=df["country"] + "<br>" + df["disease"],
-            colorscale="Reds",
+            colorscale=_COLORSCALE,
             autocolorscale=False,
             reversescale=False,
             marker_line_color="darkgray",

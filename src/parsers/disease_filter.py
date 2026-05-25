@@ -45,3 +45,62 @@ def filter_articles(articles: list[dict]) -> list[dict]:
         if disease_ja:
             result.append({**article, "disease_ja": disease_ja})
     return result
+
+
+# ── Japanese keyword support (for Yahoo Japan articles) ───────────────────────
+
+# Japanese disease keywords → Japanese display name.
+# English subtypes (H5N1, MERS, etc.) are intentionally omitted here because
+# detect_disease() (English check) is run first inside detect_disease_ja().
+DISEASE_KEYWORDS_JA: dict[str, str] = {
+    "エボラ": "エボラ出血熱",
+    "マールブルグ": "マールブルグ病",
+    "鳥インフルエンザ": "鳥インフルエンザ",
+    "ラッサ": "ラッサ熱",
+    "デング": "デング熱",
+    "ジカ": "ジカ熱",
+    "ハンタウイルス": "ハンタウイルス感染症",
+    "ニパウイルス": "ニパウイルス感染症",
+    "ニパ": "ニパウイルス感染症",
+    "サル痘": "サル痘 (Mpox)",
+    "コレラ": "コレラ",
+    "黄熱": "黄熱",
+    "チクングニア": "チクングニア熱",
+    "クリミア・コンゴ": "クリミア・コンゴ出血熱",
+    "麻疹": "麻疹",
+}
+
+# General epidemic terms: only produce "未分類" when no specific keyword matches.
+_GENERAL_JA: list[str] = [
+    "感染症", "アウトブレイク", "集団感染", "感染拡大", "パンデミック",
+]
+
+
+def detect_disease_ja(title: str) -> str | None:
+    """Detect disease from a Japanese-language title.
+
+    Returns a Japanese disease name, '未分類' (general epidemic news), or None.
+    English subtype keywords (H5N1, MERS, etc.) are checked first via detect_disease().
+    """
+    # English keywords first — preserves H5N1 > Avian influenza priority ordering.
+    result = detect_disease(title)
+    if result:
+        return result
+    # Japanese-specific disease keywords.
+    for keyword, disease_ja in DISEASE_KEYWORDS_JA.items():
+        if keyword in title:
+            return disease_ja
+    # General epidemic vocabulary → low-confidence match.
+    if any(kw in title for kw in _GENERAL_JA):
+        return "未分類"
+    return None
+
+
+def filter_yahoo_articles(articles: list[dict]) -> list[dict]:
+    """Filter Yahoo articles to target diseases, adding 'disease_ja'. Excludes 未分類."""
+    result = []
+    for article in articles:
+        disease_ja = detect_disease_ja(article.get("title", ""))
+        if disease_ja and disease_ja != "未分類":
+            result.append({**article, "disease_ja": disease_ja})
+    return result
