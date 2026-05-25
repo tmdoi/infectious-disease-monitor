@@ -48,6 +48,23 @@ def _fetch_with_fallback(name: str, fn) -> tuple[list[dict], str | None]:
         return [], msg
 
 
+def _enrich(a: dict) -> dict:
+    """Add iso3_list (and region for no-match) to an article dict in-place."""
+    text = (a.get("title", "") + " " + a.get("summary", "")).strip()
+    a["iso3_list"] = country_parser.extract_countries(text)
+    if not a["iso3_list"]:
+        a["region"] = country_parser.detect_region(text)
+    return a
+
+
+def _extraction_stats(articles: list[dict]) -> dict[str, int]:
+    total = len(articles)
+    success = sum(1 for a in articles if a.get("iso3_list"))
+    broad = sum(1 for a in articles if not a.get("iso3_list") and a.get("region"))
+    return {"total": total, "success": success, "broad": broad,
+            "unknown": total - success - broad}
+
+
 def _fetch_all() -> tuple[list[dict], list[dict], list[dict], str, list[str]]:
     """Fetch all sources in parallel, apply filters. Returns (who, ecdc, ja_combined, ts, warnings)."""
     warnings: list[str] = []
@@ -56,28 +73,28 @@ def _fetch_all() -> tuple[list[dict], list[dict], list[dict], str, list[str]]:
         raw = who_don.fetch()
         filtered = disease_filter.filter_articles(raw)
         for a in filtered:
-            a["iso3_list"] = country_parser.extract_countries_from_title(a["title"])
+            _enrich(a)
         return filtered
 
     def _fetch_yahoo():
         raw = yahoo_topics.fetch()
         filtered = disease_filter.filter_yahoo_articles(raw)
         for a in filtered:
-            a["iso3_list"] = country_parser.extract_countries_from_title_ja(a["title"])
+            _enrich(a)
         return filtered
 
     def _fetch_47():
         raw = news_47.fetch()
         filtered = disease_filter.filter_yahoo_articles(raw)
         for a in filtered:
-            a["iso3_list"] = country_parser.extract_countries_from_title_ja(a["title"])
+            _enrich(a)
         return filtered
 
     def _fetch_google():
         raw = google_news.fetch()
         filtered = disease_filter.filter_yahoo_articles(raw)
         for a in filtered:
-            a["iso3_list"] = country_parser.extract_countries_from_title_ja(a["title"])
+            _enrich(a)
         return filtered
 
     tasks = {
@@ -255,9 +272,14 @@ with st.sidebar:
             st.markdown("**関連記事**")
             for a in sorted(country_articles, key=lambda x: x.get("date", ""), reverse=True):
                 label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
+                countries = a.get("iso3_list", [])
+                multi_tag = ""
+                if len(countries) > 1:
+                    names = ", ".join(country_parser.iso3_to_display_name(c) for c in countries)
+                    multi_tag = f" [複数国: {names}]"
                 st.markdown(
                     f'<a href="{a["url"]}" target="_blank">{a["title"]}</a>'
-                    f'<br><small>{a.get("date", "日付不明")} {label} — {a.get("disease_ja", "")}</small><br>',
+                    f'<br><small>{a.get("date", "日付不明")} {label}{multi_tag} — {a.get("disease_ja", "")}</small><br>',
                     unsafe_allow_html=True,
                 )
         else:
@@ -266,6 +288,27 @@ with st.sidebar:
         if st.button("選択を解除", use_container_width=True):
             st.session_state.selected_iso3 = None
             st.rerun()
+
+    # 広域・地域不明ニュース
+    st.divider()
+    _all_for_broad = (
+        st.session_state.get("articles_who", []) + st.session_state.get("articles_ja", [])
+    )
+    _broad_articles = [
+        a for a in _all_for_broad
+        if not a.get("iso3_list") and a.get("disease_ja") in selected_diseases
+    ]
+    if _broad_articles:
+        st.header(f"🌍 広域・地域不明ニュース ({len(_broad_articles)}件)")
+        for a in sorted(_broad_articles, key=lambda x: x.get("date", ""), reverse=True):
+            label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
+            region = a.get("region")
+            region_tag = f" [{region}]" if region else " [地域不明]"
+            st.markdown(
+                f'<a href="{a["url"]}" target="_blank">{a["title"]}</a>'
+                f'<br><small>{a.get("date", "日付不明")} {label}{region_tag} — {a.get("disease_ja", "")}</small><br>',
+                unsafe_allow_html=True,
+            )
 
 
 # ── Main area ─────────────────────────────────────────────────────────────────
@@ -288,6 +331,15 @@ with col_status:
     else:
         st.warning("データ未取得 — 「データ取得」ボタンを押してください。")
 
+_stats = st.session_state.get("extraction_stats")
+if _stats and _stats["total"] > 0:
+    st.caption(
+        f"国判定: {_stats['total']} 件中 "
+        f"成功 {_stats['success']} 件 / "
+        f"広域 {_stats['broad']} 件 / "
+        f"不明 {_stats['unknown']} 件"
+    )
+
 if fetch_clicked:
     with st.spinner("WHO DON / ECDC CDTR / Yahoo Japan / 47NEWS / Google ニュース からデータを取得中…"):
         try:
@@ -298,6 +350,7 @@ if fetch_clicked:
             st.session_state.last_updated = ts
             st.session_state._using_mock = False
             st.session_state.fetch_warnings = warns
+            st.session_state.extraction_stats = _extraction_stats(who_a + ja_a)
             yahoo_count = sum(1 for a in ja_a if a.get("source") == "Yahoo Japan")
             n47_count = sum(1 for a in ja_a if a.get("source") == "47NEWS")
             gnews_count = sum(1 for a in ja_a if a.get("source") == "Google ニュース")
@@ -356,14 +409,19 @@ if _all_map_articles or st.session_state.articles_who:
     st.divider()
     st.subheader("アウトブレイク記事一覧")
     all_articles_for_table = st.session_state.articles_who + st.session_state.articles_ja
+    def _country_cell(a: dict) -> str:
+        iso3s = a.get("iso3_list", [])
+        if iso3s:
+            return ", ".join(country_parser.iso3_to_display_name(c) for c in iso3s)
+        region = a.get("region")
+        return f"[{region}]" if region else "不明"
+
     display_articles = [
         {
             "日付": a.get("date", ""),
             "ソース": a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", "")),
             "疾患": a.get("disease_ja", ""),
-            "国": ", ".join(
-                country_parser.iso3_to_display_name(c) for c in a.get("iso3_list", [])
-            ) or "複数国/不明",
+            "国": _country_cell(a),
             "タイトル": a.get("title", ""),
             "URL": a.get("url", ""),
         }
@@ -379,22 +437,6 @@ if _all_map_articles or st.session_state.articles_who:
         )
     else:
         st.info("選択された疾患の記事がありません。")
-
-    # Japanese articles without a country — shown separately
-    _ja_no_country = [
-        a for a in st.session_state.articles_ja
-        if not a.get("iso3_list") and a.get("disease_ja") in selected_diseases
-    ]
-    if _ja_no_country:
-        st.divider()
-        st.subheader("📰 日本語関連ニュース（国不明）")
-        for a in sorted(_ja_no_country, key=lambda x: x.get("date", ""), reverse=True):
-            label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
-            st.markdown(
-                f'<a href="{a["url"]}" target="_blank">{a["title"]}</a>'
-                f'<br><small>{a.get("date", "日付不明")} {label} — {a.get("disease_ja", "")}</small><br>',
-                unsafe_allow_html=True,
-            )
 
     # ECDC reports
     if st.session_state.articles_ecdc:

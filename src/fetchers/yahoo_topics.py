@@ -35,6 +35,7 @@ def fetch() -> list[dict]:
                     "url": link,
                     "date": pub_date.strftime("%Y-%m-%d") if pub_date else "",
                     "source": "Yahoo Japan",
+                    "summary": entry.get("summary", "").strip(),
                 })
         except Exception as e:
             logger.warning("Yahoo RSS fetch failed for %s: %s", url, e)
