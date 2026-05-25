@@ -1,6 +1,6 @@
 # 新興感染症 世界モニタリングダッシュボード
 
-WHO / ECDC のアウトブレイク情報を世界地図（コロプレスマップ）でリアルタイム可視化する Streamlit アプリです。
+WHO / ECDC / Yahoo Japan / 47NEWS / Google ニュース のアウトブレイク情報を世界地図（コロプレスマップ）でリアルタイム可視化する Streamlit アプリです。
 
 ## 機能
 
@@ -8,6 +8,7 @@ WHO / ECDC のアウトブレイク情報を世界地図（コロプレスマッ
 - 16疾患(エボラ・麻疹・デング熱など)の疾患フィルタ
 - 国クリックで詳細情報と WHO DON 記事リンクを表示
 - 手動ボタンでデータを最新状態に更新(過去3ヶ月分、キャッシュ付き)
+- 5データソースを並列取得、ソース別エラーハンドリング付き
 
 ## データソース
 
@@ -15,6 +16,9 @@ WHO / ECDC のアウトブレイク情報を世界地図（コロプレスマッ
 |--------|------|
 | [WHO Disease Outbreak News (DON)](https://www.who.int/emergencies/disease-outbreak-news) | WHO が公表する感染症アウトブレイク速報 |
 | [ECDC CDTR](https://www.ecdc.europa.eu/en/publications-and-data/monitoring/weekly-threats-reports) | 欧州疾病予防管理センターの週次レポート |
+| [Yahoo Japan トピックス](https://news.yahoo.co.jp/) | Yahoo Japan 主要・国際トピックス RSS |
+| [47NEWS](https://www.47news.jp/) | 共同通信系地方紙連合ニュース RSS |
+| [Google ニュース](https://news.google.com/) | 疾患キーワードによる Google News RSS 検索 |
 
 ## セットアップ
 
@@ -70,10 +74,12 @@ uv run streamlit run app.py
 - 疾患フィルタを16疾患に拡張(麻疹を新規追加、ハンタウイルス含む)
 - 疾患マルチセレクト UI をサイドバーに追加
 - 実データ取得失敗時のモックデータフォールバックを実装
-- コロプレスマップの色スケールを改善(度数1の視認性向上)
+- コロプレスマップの色スケールを改善(度数1の視認性向上、離散的近似ステップ関数)
 - Yahoo Japan トピックスRSS(主要・国際)をデータソースに追加
+- 47NEWS RSS と Google ニュース RSS をデータソースに追加(計5ソース)
+- 5ソースの並列フェッチ(ThreadPoolExecutor)とソース別独立エラーハンドリング
 - 日本語国名→ISO3 変換マッピングを追加(主要70カ国)
-- 記事一覧にソースラベル(🌐 WHO / 🇪🇺 ECDC / 📰 Yahoo)を表示
+- 記事一覧にソースラベル(🌐 WHO / 🇪🇺 ECDC / 📰 Yahoo / 🗞 47NEWS / 🔍 Google)を表示
 
 ### 2026-05-21
 - 記事リンクの新規タブ表示(target="_blank")対応
