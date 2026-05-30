@@ -38,6 +38,19 @@ WHO / ECDC のアウトブレイク情報と日本語ニュースを、インタ
 | **フィード解析** | [feedparser](https://pypi.org/project/feedparser/) |
 | **HTML解析** | [BeautifulSoup4](https://pypi.org/project/beautifulsoup4/) |
 
+## 動作環境
+
+| プラットフォーム | アプリ本体 | 翻訳機能 |
+|---|---|---|
+| Apple Silicon Mac (M1/M2/M3/M4) | ✅ | ✅ |
+| Intel Mac (x86_64) | ✅ | ❌ 非対応 |
+| Windows (x86_64 / ARM64) | ✅ | ✅ |
+| Linux (x86_64 / ARM64) | ✅ | ✅ |
+
+- アプリの中核機能(世界地図・データ取得・疾患フィルタ・記事表示など)は全プラットフォームで動作します。
+- 日英翻訳機能は、翻訳ライブラリ(argos-translate)が依存する onnxruntime が Intel Mac 向けのパッケージを提供していないため、**Intel Mac では利用できません**。Intel Mac では翻訳以外の機能をご利用ください。
+- Apple Silicon Mac、Windows、Linux では全機能が利用可能です。
+
 ## セットアップ
 
 ### 前提条件
@@ -98,6 +111,9 @@ uv run streamlit run app.py
 [MIT](LICENSE)
 
 ## 更新履歴
+
+### 2026-05-30(5回目)
+- 動作環境セクションを追加。Intel Mac では翻訳機能が非対応である旨を明記
 
 ### 2026-05-30(4回目)
 - 開発体制(Claude Code 活用)についての記載を追加

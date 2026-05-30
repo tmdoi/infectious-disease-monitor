@@ -38,6 +38,19 @@ A Streamlit application that visualizes WHO / ECDC outbreak information and Japa
 | **Feed parsing** | [feedparser](https://pypi.org/project/feedparser/) |
 | **HTML parsing** | [BeautifulSoup4](https://pypi.org/project/beautifulsoup4/) |
 
+## Supported Platforms
+
+| Platform | Core App | Translation |
+|---|---|---|
+| Apple Silicon Mac (M1/M2/M3/M4) | ✅ | ✅ |
+| Intel Mac (x86_64) | ✅ | ❌ Not supported |
+| Windows (x86_64 / ARM64) | ✅ | ✅ |
+| Linux (x86_64 / ARM64) | ✅ | ✅ |
+
+- The core features (world map, data fetching, disease filter, article display, etc.) work on all platforms.
+- The Japanese/English translation feature is **not available on Intel Macs**, because onnxruntime (a dependency of the argos-translate library) does not provide a package for Intel macOS (x86_64). On Intel Macs, all features other than translation are available.
+- All features are available on Apple Silicon Macs, Windows, and Linux.
+
 ## Setup
 
 ### Prerequisites
@@ -100,6 +113,9 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 ## Changelog
 
 ### 2026-05-30 (latest)
+- Added a Supported Platforms section; noted that the translation feature is unavailable on Intel Macs
+
+### 2026-05-30 (prev latest)
 - Added a note about the development process (built with Claude Code)
 - Added About and How-to-Use expandable sections to the sidebar (bilingual, language-toggle aware)
 
