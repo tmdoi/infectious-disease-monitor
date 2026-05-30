@@ -83,8 +83,21 @@ def build(df: pd.DataFrame, lang: str = "ja") -> go.Figure:
             showframe=False,
             showcoastlines=True,
             projection_type="natural earth",
+            # Anchor the viewport to valid geographic bounds.
+            # Without these, aggressive zoom-out pushes lon/lat beyond ±180/±90,
+            # causing Plotly.js to produce NaN coordinates and freeze the map.
+            lataxis=dict(range=[-90, 90]),
+            lonaxis=dict(range=[-180, 180]),
         ),
         margin=dict(l=0, r=0, t=0, b=0),
         height=520,
+        # Preserve the user's zoom/pan state across Streamlit reruns.
+        # on_select="rerun" triggers a Python rerun on every country click;
+        # without uirevision the map would reset to the default view each time.
+        uirevision="world-map",
+        # Pan mode: drag scrolls the map, scroll-wheel zooms.
+        # Single-click still fires on_select normally.
+        # Avoids the drag-to-zoom-box mode that can push the viewport out of bounds.
+        dragmode="pan",
     )
     return fig
