@@ -72,6 +72,72 @@ _TOKYO_METRO = re.compile(r"^.+\.metro\.tokyo\.lg\.jp$")
 _CITY_JP = re.compile(r"^.+\.city\..+\.jp$")
 
 
+# Japanese publisher display name → English equivalent
+PUBLISHER_EN: dict[str, str] = {
+    # 公共放送
+    "NHK": "NHK",
+    # 全国紙
+    "朝日新聞": "Asahi Shimbun",
+    "毎日新聞": "Mainichi Shimbun",
+    "読売新聞": "Yomiuri Shimbun",
+    "日経新聞": "Nikkei",
+    "産経新聞": "Sankei Shimbun",
+    "東京新聞": "Tokyo Shimbun",
+    "中日新聞": "Chunichi Shimbun",
+    # 通信社
+    "共同通信": "Kyodo News",
+    "共同通信(ノアドット)": "Kyodo News",
+    "共同通信(旧)": "Kyodo News",
+    "時事通信": "Jiji Press",
+    "47NEWS": "47NEWS",
+    # 経済・国際メディア
+    "Bloomberg Japan": "Bloomberg Japan",
+    "Reuters": "Reuters",
+    "Reuters Japan": "Reuters Japan",
+    "AFP通信": "AFP",
+    "CNN日本版": "CNN Japan",
+    "BBC": "BBC",
+    # 公的機関(国)
+    "厚生労働省": "MHLW",
+    "国立感染症研究所": "NIID",
+    "内閣府": "Cabinet Office",
+    "首相官邸": "Prime Minister's Office",
+    "外務省": "MOFA",
+    "農林水産省": "MAFF",
+    "環境省": "MOE",
+    "PMDA": "PMDA",
+    # 公的機関(国際)
+    "WHO": "WHO",
+    "ECDC": "ECDC",
+    "CDC(米国)": "CDC",
+    "EMA(欧州医薬品庁)": "EMA",
+    "AMED(日本医療研究開発機構)": "AMED",
+    # アカデミア
+    "東京大学": "University of Tokyo",
+    "京都大学": "Kyoto University",
+    "大阪大学": "Osaka University",
+    "東北大学": "Tohoku University",
+    "名古屋大学": "Nagoya University",
+    "九州大学": "Kyushu University",
+    "北海道大学": "Hokkaido University",
+    "理化学研究所": "RIKEN",
+    # 学会
+    "日本感染症学会": "Japanese Society of Infectious Diseases",
+    "日本環境感染学会": "Japanese Society for Infection Prevention",
+    "日本ウイルス学会": "Japanese Society for Virology",
+    # パターンマッチ由来
+    "自治体": "Local Government",
+    "大学": "University",
+}
+
+
+def localize_label(label: str, lang: str) -> str:
+    """Return the display name for a publisher label in the given language."""
+    if lang == "en":
+        return PUBLISHER_EN.get(label, label)
+    return label
+
+
 def extract_domain(url: str) -> str | None:
     """Extract the hostname (lowercase, no port) from a URL."""
     try:

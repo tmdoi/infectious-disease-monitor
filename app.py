@@ -18,6 +18,7 @@ from src.data.ui_labels import t
 from src.fetchers import ecdc_cdtr, google_news, news_47, who_don, yahoo_topics
 from src.parsers import country as country_parser
 from src.parsers import disease_filter
+from src.parsers.source_whitelist import localize_label
 from src.visualizers.choropleth import build
 
 logging.basicConfig(level=logging.INFO)
@@ -28,7 +29,7 @@ st.set_page_config(
     layout="wide",
 )
 
-_SOURCE_LABEL: dict[str, str] = {
+_SOURCE_LABEL_JA: dict[str, str] = {
     "WHO DON": "🌐 WHO",
     "ECDC CDTR": "🇪🇺 ECDC",
     "Yahoo Japan": "📰 Yahoo",
@@ -36,6 +37,20 @@ _SOURCE_LABEL: dict[str, str] = {
     "Google ニュース": "🔍 Google",
     "WHO DON (サンプルデータ)": "🧪 サンプル",
 }
+_SOURCE_LABEL_EN: dict[str, str] = {
+    "WHO DON": "🌐 WHO",
+    "ECDC CDTR": "🇪🇺 ECDC",
+    "Yahoo Japan": "📰 Yahoo",
+    "47NEWS": "🗞 47NEWS",
+    "Google ニュース": "🔍 Google News",
+    "WHO DON (サンプルデータ)": "🧪 Sample",
+}
+
+
+def _source_label(source: str, lang: str) -> str:
+    """Return the display label for a source key in the given language."""
+    tbl = _SOURCE_LABEL_EN if lang == "en" else _SOURCE_LABEL_JA
+    return tbl.get(source, source)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -299,14 +314,14 @@ with st.sidebar:
     if all_articles_sidebar:
         from collections import Counter
 
-        def _display_label(a: dict) -> str:
+        def _display_label(a: dict, _lang: str) -> str:
             pub = a.get("publisher")
             if pub:
-                return pub
+                return localize_label(pub, _lang)
             src = a.get("source", "")
-            return _SOURCE_LABEL.get(src, src)
+            return _source_label(src, _lang)
 
-        counts = Counter(_display_label(a) for a in all_articles_sidebar)
+        counts = Counter(_display_label(a, lang) for a in all_articles_sidebar)
         total = len(all_articles_sidebar)
         st.header(f"📡 {t('source_list', lang)}")
         caption = f"{'全' if lang == 'ja' else 'Total'} {total} {'件' if lang == 'ja' else 'articles'}"
@@ -334,7 +349,7 @@ with st.sidebar:
         if country_articles:
             st.markdown(f"**{t('related_articles', lang)}**")
             for a in sorted(country_articles, key=lambda x: x.get("date", ""), reverse=True):
-                label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
+                label = _display_label(a, lang)
                 countries = a.get("iso3_list", [])
                 multi_tag = ""
                 if len(countries) > 1:
@@ -367,7 +382,7 @@ with st.sidebar:
         count_suffix = f"({len(_broad_articles)}{'件' if lang == 'ja' else ''})"
         st.header(f"🌍 {t('regional_news', lang)} {count_suffix}")
         for a in sorted(_broad_articles, key=lambda x: x.get("date", ""), reverse=True):
-            label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
+            label = _display_label(a, lang)
             region = a.get("region")
             region_tag = f" [{region}]" if region else f" [{t('region_unknown', lang)}]"
             title_display = _tr(a["title"], lang)
@@ -504,12 +519,10 @@ if _all_map_articles or st.session_state.articles_who:
     display_articles = [
         {
             t("date_col", lang): a.get("date", ""),
-            t("source_col", lang): (
-                a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
-            ),
+            t("source_col", lang): _display_label(a, lang),
             t("disease_col", lang): disease_ja_to_display(a.get("disease_ja", ""), lang),
             t("country_col", lang): _country_cell(a, lang),
-            t("title_col", lang): a.get("title", ""),
+            t("title_col", lang): _tr(a.get("title", ""), lang),
             "URL": a.get("url", ""),
         }
         for a in all_articles_for_table
