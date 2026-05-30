@@ -291,6 +291,11 @@ if "disease_ids_selection" not in st.session_state:
 lang = st.session_state["lang"]
 
 with st.sidebar:
+    if translator.TRANSLATION_AVAILABLE:
+        st.success(t("translation_status_on", lang))
+    else:
+        st.warning(t("translation_status_off", lang))
+
     st.header(f"🔬 {t('disease_filter', lang)}")
 
     # Multiselect uses internal IDs so selection survives language switches.

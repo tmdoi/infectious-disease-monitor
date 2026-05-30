@@ -122,6 +122,9 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 ## Changelog
 
 ### 2026-05-30 (latest)
+- Added a status badge in the sidebar showing whether translation is enabled
+
+### 2026-05-30 (prev latest 3)
 - Made translation an optional dependency so the app runs even without the translation library (e.g. on Intel Macs); split install instructions into with/without translation
 
 ### 2026-05-30 (prev latest 2)
