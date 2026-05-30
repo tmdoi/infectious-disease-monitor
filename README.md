@@ -122,6 +122,9 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 ## Changelog
 
 ### 2026-05-30 (latest)
+- Improved the disabled-translation badge (light orange background); added a help section explaining how to enable translation and the Intel Mac limitation
+
+### 2026-05-30 (prev latest 4)
 - Added a status badge in the sidebar showing whether translation is enabled
 
 ### 2026-05-30 (prev latest 3)

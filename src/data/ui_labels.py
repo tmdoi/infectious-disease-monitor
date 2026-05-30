@@ -58,6 +58,11 @@ _LABELS: dict[str, dict[str, str]] = {
         "translation_disabled_note": "※ この環境では記事タイトルの自動翻訳は無効です(UI表示の言語切替は利用できます)",
         "translation_status_on": "🟢 翻訳機能: 有効",
         "translation_status_off": "⚪ 翻訳機能: 無効",
+        "translation_help_header": "翻訳機能を有効にするには",
+        "translation_help_intro": "翻訳ライブラリを含めてインストールしてください:",
+        "translation_help_restart": "そのうえで、アプリを再起動してください。",
+        "translation_help_note": "**【ご注意】** Intel Mac (x86\_64) では、翻訳ライブラリが依存する onnxruntime が対応パッケージを提供していないため、翻訳機能を有効にできません。Apple Silicon Mac (M1/M2/M3/M4)、Windows、Linux では有効化できます。",
+        "translation_help_intel_mac": "⚠️ **この環境（Intel Mac / x86\_64）では翻訳機能を有効にできません。**",
         # About / How to Use
         "about_header": "ℹ️ About",
         "about_body": """\
@@ -147,6 +152,11 @@ _LABELS: dict[str, dict[str, str]] = {
         "translation_disabled_note": "Note: Automatic article title translation is disabled in this environment (UI language switching is still available).",
         "translation_status_on": "🟢 Translation: On",
         "translation_status_off": "⚪ Translation: Off",
+        "translation_help_header": "How to enable translation",
+        "translation_help_intro": "Install with the translation extra:",
+        "translation_help_restart": "Then restart the app.",
+        "translation_help_note": "**Note:** On Intel Macs (x86\_64), translation cannot be enabled because onnxruntime (a dependency of the translation library) does not provide a compatible package. It can be enabled on Apple Silicon Macs (M1/M2/M3/M4), Windows, and Linux.",
+        "translation_help_intel_mac": "⚠️ **Translation cannot be enabled on this machine (Intel Mac / x86\_64).**",
         # About / How to Use
         "about_header": "ℹ️ About",
         "about_body": """\

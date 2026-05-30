@@ -1,6 +1,7 @@
 """新興感染症 世界モニタリングダッシュボード"""
 
 import logging
+import platform
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import pandas as pd
@@ -28,6 +29,8 @@ st.set_page_config(
     page_icon="🦠",
     layout="wide",
 )
+
+_IS_INTEL_MAC = platform.system() == "Darwin" and platform.machine() == "x86_64"
 
 _SOURCE_LABEL_JA: dict[str, str] = {
     "WHO DON": "🌐 WHO",
@@ -291,10 +294,24 @@ if "disease_ids_selection" not in st.session_state:
 lang = st.session_state["lang"]
 
 with st.sidebar:
+    # ── Translation status badge ───────────────────────────────────────────────
     if translator.TRANSLATION_AVAILABLE:
         st.success(t("translation_status_on", lang))
     else:
-        st.warning(t("translation_status_off", lang))
+        st.markdown(
+            f'<div style="background:#FFEDD5;border:1px solid #FED7AA;border-radius:6px;'
+            f'padding:8px 12px;color:#9A3412;font-size:0.9rem;font-weight:500;">'
+            f'{t("translation_status_off", lang)}</div>',
+            unsafe_allow_html=True,
+        )
+        with st.expander(t("translation_help_header", lang)):
+            st.markdown(t("translation_help_intro", lang))
+            st.code("uv sync --extra translation", language="bash")
+            st.markdown(t("translation_help_restart", lang))
+            if _IS_INTEL_MAC:
+                st.warning(t("translation_help_intel_mac", lang))
+            else:
+                st.info(t("translation_help_note", lang))
 
     st.header(f"🔬 {t('disease_filter', lang)}")
 
