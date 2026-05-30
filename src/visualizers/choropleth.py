@@ -3,6 +3,8 @@
 import pandas as pd
 import plotly.graph_objects as go
 
+from src.data.ui_labels import t
+
 # UN member states ISO-3 codes — used as a background trace so that
 # data-less countries also fire on_select click events.
 _WORLD_ISO3: list[str] = [
@@ -29,7 +31,7 @@ _WORLD_ISO3: list[str] = [
 ]
 
 
-def build(df: pd.DataFrame) -> go.Figure:
+def build(df: pd.DataFrame, lang: str = "ja") -> go.Figure:
     """Build a choropleth figure from a DataFrame with columns: iso3, country, count, disease."""
     fig = go.Figure()
 
@@ -58,6 +60,7 @@ def build(df: pd.DataFrame) -> go.Figure:
         [0.600, "#a63603"],  # count 4-6 → dark reddish-orange
         [1.000, "#7f2704"],  # max count → deepest red
     ]
+    hover_count_label = t("hover_count", lang)
     fig.add_trace(
         go.Choropleth(
             locations=df["iso3"],
@@ -69,8 +72,8 @@ def build(df: pd.DataFrame) -> go.Figure:
             reversescale=False,
             marker_line_color="darkgray",
             marker_line_width=0.5,
-            colorbar_title="アウトブレイク数",
-            hovertemplate="%{text}<br>件数: %{z}<extra></extra>",
+            colorbar_title=t("colorbar_title", lang),
+            hovertemplate=f"%{{text}}<br>{hover_count_label}: %{{z}}<extra></extra>",
             name="",
         )
     )

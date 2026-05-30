@@ -6,8 +6,15 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 import streamlit as st
 
-from src import cache
+from src import cache, translator
+from src.data.glossary import (
+    ALL_DISEASE_IDS,
+    disease_display_name,
+    disease_ja_to_display,
+    ja_name_from_id,
+)
 from src.data.mock_articles import ARTICLES as _MOCK_ARTICLES
+from src.data.ui_labels import t
 from src.fetchers import ecdc_cdtr, google_news, news_47, who_don, yahoo_topics
 from src.parsers import country as country_parser
 from src.parsers import disease_filter
@@ -119,7 +126,6 @@ def _fetch_all() -> tuple[list[dict], list[dict], list[dict], str, list[str]]:
     ecdc_reports = results["ecdc_cdtr"]
     ja_combined = results["yahoo_topics"] + results["news_47"] + results["google_news"]
 
-    # Save combined timestamp based on WHO (primary source)
     ts = cache.save("who_don", who_articles)
     cache.save("ecdc_cdtr", ecdc_reports)
 
@@ -158,12 +164,16 @@ def _mock_fallback_articles() -> list[dict]:
     return result
 
 
-def _build_map_df(articles: list[dict], selected_diseases: list[str]) -> pd.DataFrame:
-    """Aggregate articles (any source) to a map-ready DataFrame per ISO3."""
+def _build_map_df(
+    articles: list[dict],
+    selected_ja_names: set[str],
+    lang: str = "ja",
+) -> pd.DataFrame:
+    """Aggregate articles to a map-ready DataFrame per ISO3, with lang-aware labels."""
     rows = [
         {"iso3": iso3, "disease": a["disease_ja"]}
         for a in articles
-        if a.get("disease_ja") in selected_diseases
+        if a.get("disease_ja") in selected_ja_names
         for iso3 in a.get("iso3_list", [])
     ]
     if not rows:
@@ -177,11 +187,46 @@ def _build_map_df(articles: list[dict], selected_diseases: list[str]) -> pd.Data
         )
         .reset_index()
     )
-    agg["country"] = agg["iso3"].map(country_parser.iso3_to_display_name)
+    agg["country"] = agg["iso3"].map(lambda c: country_parser.get_country_name(c, lang))
+    agg["disease"] = agg["disease"].map(lambda ja: disease_ja_to_display(ja, lang))
     return agg
 
 
-# ── Session state bootstrap ───────────────────────────────────────────────────
+def _tr(title: str, lang: str) -> str:
+    """Translate article title if translation is ready, else return original."""
+    if not st.session_state.get("translation_ready"):
+        return title
+    return translator.translate(title, lang)
+
+
+def _country_cell(a: dict, lang: str) -> str:
+    """Return display string for a country cell in the article table."""
+    iso3s = a.get("iso3_list", [])
+    if iso3s:
+        return ", ".join(country_parser.get_country_name(c, lang) for c in iso3s)
+    region = a.get("region")
+    return f"[{region}]" if region else t("region_unknown", lang)
+
+
+# ── Session state: language ───────────────────────────────────────────────────
+
+if "lang" not in st.session_state:
+    st.session_state["lang"] = "ja"
+
+# ── Session state: translation models ────────────────────────────────────────
+
+if "translation_ready" not in st.session_state:
+    if translator.check_models_installed():
+        translator._models_ready = True
+        st.session_state["translation_ready"] = True
+    else:
+        with st.spinner(t("translation_preparing", st.session_state["lang"])):
+            ok = translator.ensure_models()
+        st.session_state["translation_ready"] = ok
+        if not ok:
+            st.warning(t("translation_unavailable", st.session_state["lang"]))
+
+# ── Session state: articles ───────────────────────────────────────────────────
 
 if "articles_who" not in st.session_state:
     who_cached, who_ts = cache.load("who_don")
@@ -220,24 +265,40 @@ if "articles_who" not in st.session_state:
 if "selected_iso3" not in st.session_state:
     st.session_state.selected_iso3 = None
 
+if "disease_ids_selection" not in st.session_state:
+    st.session_state.disease_ids_selection = ALL_DISEASE_IDS.copy()
+
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 
+lang = st.session_state["lang"]
+
 with st.sidebar:
-    st.header("🔬 疾患フィルタ")
-    all_diseases = disease_filter.ALL_DISEASES_JA
-    selected_diseases = st.multiselect(
-        "表示する疾患を選択",
-        options=all_diseases,
-        default=all_diseases,
+    st.header(f"🔬 {t('disease_filter', lang)}")
+
+    # Multiselect uses internal IDs so selection survives language switches.
+    # format_func converts each ID to the language-appropriate display name.
+    # Note: no key= here; format_func with key= doesn't update chips on re-render.
+    # Selection is manually persisted via st.session_state.disease_ids_selection.
+    selected_disease_ids: list[str] = st.multiselect(
+        t("select_diseases", lang),
+        options=ALL_DISEASE_IDS,
+        default=st.session_state.disease_ids_selection,
+        format_func=lambda did: disease_display_name(did, lang),
     )
+    st.session_state.disease_ids_selection = selected_disease_ids
+    # Convert IDs to Japanese names for filtering articles (internal data uses ja names)
+    selected_ja_names: set[str] = {ja_name_from_id(did) for did in selected_disease_ids}
 
     st.divider()
 
     # 配信元一覧
-    all_articles_sidebar = st.session_state.get("articles_who", []) + st.session_state.get("articles_ja", [])
+    all_articles_sidebar = (
+        st.session_state.get("articles_who", []) + st.session_state.get("articles_ja", [])
+    )
     if all_articles_sidebar:
         from collections import Counter
+
         def _display_label(a: dict) -> str:
             pub = a.get("publisher")
             if pub:
@@ -246,46 +307,50 @@ with st.sidebar:
             return _SOURCE_LABEL.get(src, src)
 
         counts = Counter(_display_label(a) for a in all_articles_sidebar)
-        st.header("📡 配信元一覧")
-        st.caption(f"全 {len(all_articles_sidebar)} 件")
+        total = len(all_articles_sidebar)
+        st.header(f"📡 {t('source_list', lang)}")
+        caption = f"{'全' if lang == 'ja' else 'Total'} {total} {'件' if lang == 'ja' else 'articles'}"
+        st.caption(caption)
         for label, n in counts.most_common():
             st.markdown(f"- {label}: **{n}**")
         st.divider()
 
-    st.header("📋 選択中の国")
+    st.header(f"📋 {t('selected_country', lang)}")
 
     iso3 = st.session_state.selected_iso3
     if iso3 is None:
-        st.info("地図上の国をクリックしてください")
+        st.info(t("no_country_selected", lang))
     else:
-        country_name = country_parser.iso3_to_display_name(iso3)
+        country_name = country_parser.get_country_name(iso3, lang)
         st.subheader(country_name)
 
         all_articles = st.session_state.articles_who + st.session_state.articles_ja
         country_articles = [
             a for a in all_articles
             if iso3 in a.get("iso3_list", [])
-            and a.get("disease_ja") in selected_diseases
+            and a.get("disease_ja") in selected_ja_names
         ]
 
         if country_articles:
-            st.markdown("**関連記事**")
+            st.markdown(f"**{t('related_articles', lang)}**")
             for a in sorted(country_articles, key=lambda x: x.get("date", ""), reverse=True):
                 label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
                 countries = a.get("iso3_list", [])
                 multi_tag = ""
                 if len(countries) > 1:
-                    names = ", ".join(country_parser.iso3_to_display_name(c) for c in countries)
-                    multi_tag = f" [複数国: {names}]"
+                    names = ", ".join(country_parser.get_country_name(c, lang) for c in countries)
+                    multi_tag = f" [{t('multi_country', lang)}: {names}]"
+                title_display = _tr(a["title"], lang)
                 st.markdown(
-                    f'<a href="{a["url"]}" target="_blank">{a["title"]}</a>'
-                    f'<br><small>{a.get("date", "日付不明")} {label}{multi_tag} — {a.get("disease_ja", "")}</small><br>',
+                    f'<a href="{a["url"]}" target="_blank">{title_display}</a>'
+                    f'<br><small>{a.get("date", t("date_unknown", lang))} {label}{multi_tag}'
+                    f' — {disease_ja_to_display(a.get("disease_ja", ""), lang)}</small><br>',
                     unsafe_allow_html=True,
                 )
         else:
-            st.write("この国の記事データがありません（フィルタを確認してください）。")
+            st.write(t("no_articles", lang))
 
-        if st.button("選択を解除", use_container_width=True):
+        if st.button(t("clear_selection", lang), use_container_width=True):
             st.session_state.selected_iso3 = None
             st.rerun()
 
@@ -296,52 +361,67 @@ with st.sidebar:
     )
     _broad_articles = [
         a for a in _all_for_broad
-        if not a.get("iso3_list") and a.get("disease_ja") in selected_diseases
+        if not a.get("iso3_list") and a.get("disease_ja") in selected_ja_names
     ]
     if _broad_articles:
-        st.header(f"🌍 広域・地域不明ニュース ({len(_broad_articles)}件)")
+        count_suffix = f"({len(_broad_articles)}{'件' if lang == 'ja' else ''})"
+        st.header(f"🌍 {t('regional_news', lang)} {count_suffix}")
         for a in sorted(_broad_articles, key=lambda x: x.get("date", ""), reverse=True):
             label = a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
             region = a.get("region")
-            region_tag = f" [{region}]" if region else " [地域不明]"
+            region_tag = f" [{region}]" if region else f" [{t('region_unknown', lang)}]"
+            title_display = _tr(a["title"], lang)
             st.markdown(
-                f'<a href="{a["url"]}" target="_blank">{a["title"]}</a>'
-                f'<br><small>{a.get("date", "日付不明")} {label}{region_tag} — {a.get("disease_ja", "")}</small><br>',
+                f'<a href="{a["url"]}" target="_blank">{title_display}</a>'
+                f'<br><small>{a.get("date", t("date_unknown", lang))} {label}{region_tag}'
+                f' — {disease_ja_to_display(a.get("disease_ja", ""), lang)}</small><br>',
                 unsafe_allow_html=True,
             )
 
 
 # ── Main area ─────────────────────────────────────────────────────────────────
 
-st.title("🦠 新興感染症 世界モニタリングダッシュボード")
-st.caption("WHO / ECDC / Yahoo Japan / 47NEWS / Google ニュース のアウトブレイク情報をリアルタイムで可視化します。")
+st.title(f"🦠 {t('app_title', lang)}")
+st.caption(t("app_subtitle", lang))
 
 if st.session_state.get("_using_mock"):
-    st.warning("⚠️ サンプルデータ表示中 — 「データ取得」ボタンで実データに切り替えできます。")
+    st.warning(t("using_sample", lang))
 
 for w in st.session_state.get("fetch_warnings", []):
     st.warning(f"⚠️ {w}")
 
-col_btn, col_status = st.columns([1, 4])
+col_btn, col_status, col_lang = st.columns([1, 3, 1])
 with col_btn:
-    fetch_clicked = st.button("🔄 データ取得", type="primary", use_container_width=True)
+    fetch_clicked = st.button(t("fetch_data", lang), type="primary", use_container_width=True)
 with col_status:
     if st.session_state.last_updated:
-        st.info(f"最終更新: {st.session_state.last_updated}")
+        st.info(f"{t('last_updated', lang)}: {st.session_state.last_updated}")
     else:
-        st.warning("データ未取得 — 「データ取得」ボタンを押してください。")
+        st.warning(t("data_not_fetched", lang))
+with col_lang:
+    new_lang = st.radio(
+        t("lang_label", lang),
+        options=["ja", "en"],
+        format_func=lambda x: "🇯🇵 日本語" if x == "ja" else "🇬🇧 English",
+        index=0 if lang == "ja" else 1,
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    if new_lang != lang:
+        st.session_state["lang"] = new_lang
+        st.rerun()
 
 _stats = st.session_state.get("extraction_stats")
 if _stats and _stats["total"] > 0:
     st.caption(
-        f"国判定: {_stats['total']} 件中 "
-        f"成功 {_stats['success']} 件 / "
-        f"広域 {_stats['broad']} 件 / "
-        f"不明 {_stats['unknown']} 件"
+        f"{t('country_extraction', lang)}: {_stats['total']} {'件中' if lang == 'ja' else 'articles —'} "
+        f"{t('success', lang)} {_stats['success']} {'件' if lang == 'ja' else ''} / "
+        f"{t('broad', lang)} {_stats['broad']} {'件' if lang == 'ja' else ''} / "
+        f"{t('unknown', lang)} {_stats['unknown']} {'件' if lang == 'ja' else ''}"
     )
 
 if fetch_clicked:
-    with st.spinner("WHO DON / ECDC CDTR / Yahoo Japan / 47NEWS / Google ニュース からデータを取得中…"):
+    with st.spinner(t("fetching", lang)):
         try:
             who_a, ecdc_r, ja_a, ts, warns = _fetch_all()
             st.session_state.articles_who = who_a
@@ -355,16 +435,17 @@ if fetch_clicked:
             n47_count = sum(1 for a in ja_a if a.get("source") == "47NEWS")
             gnews_count = sum(1 for a in ja_a if a.get("source") == "Google ニュース")
             st.success(
-                f"取得完了 — WHO DON: {len(who_a)} 件 / "
-                f"ECDC CDTR: {len(ecdc_r)} 件 / "
-                f"Yahoo: {yahoo_count} 件 / "
-                f"47NEWS: {n47_count} 件 / "
-                f"Google: {gnews_count} 件"
+                f"{t('fetch_complete', lang)} — WHO DON: {len(who_a)} / "
+                f"ECDC CDTR: {len(ecdc_r)} / "
+                f"Yahoo: {yahoo_count} / "
+                f"47NEWS: {n47_count} / "
+                f"Google: {gnews_count}"
             )
             for w in warns:
                 st.warning(f"⚠️ {w}")
         except Exception as e:
-            st.error(f"データ取得中にエラーが発生しました: {e}")
+            err_label = "データ取得中にエラーが発生しました" if lang == "ja" else "Data fetch error"
+            st.error(f"{err_label}: {e}")
             if not st.session_state.articles_who:
                 cached_who, who_ts = cache.load("who_don")
                 cached_ecdc, _ = cache.load("ecdc_cdtr")
@@ -378,13 +459,23 @@ if fetch_clicked:
                         (cached_yahoo or []) + (cached_47 or []) + (cached_gnews or [])
                     )
                     st.session_state.last_updated = who_ts
-                    st.warning(f"キャッシュデータを使用しています（更新: {who_ts}）")
+                    cache_msg = (
+                        f"キャッシュデータを使用しています（更新: {who_ts}）"
+                        if lang == "ja"
+                        else f"Using cached data (updated: {who_ts})"
+                    )
+                    st.warning(cache_msg)
                 else:
                     st.session_state.articles_who = _mock_fallback_articles()
                     st.session_state.articles_ecdc = []
                     st.session_state.articles_ja = []
                     st.session_state._using_mock = True
-                    st.warning("実データ取得に失敗しました。サンプルデータを表示しています。")
+                    fallback_msg = (
+                        "実データ取得に失敗しました。サンプルデータを表示しています。"
+                        if lang == "ja"
+                        else "Failed to fetch real data. Showing sample data."
+                    )
+                    st.warning(fallback_msg)
 
 # ── Map ───────────────────────────────────────────────────────────────────────
 
@@ -392,71 +483,72 @@ _ja_with_country = [a for a in st.session_state.articles_ja if a.get("iso3_list"
 _all_map_articles = st.session_state.articles_who + _ja_with_country
 
 if _all_map_articles or st.session_state.articles_who:
-    map_df = _build_map_df(_all_map_articles, selected_diseases)
+    map_df = _build_map_df(_all_map_articles, selected_ja_names, lang)
 
-    st.subheader("世界アウトブレイクマップ")
+    st.subheader(t("map_title", lang))
     if map_df.empty:
-        st.info("選択された疾患に該当する国データがありません。")
+        st.info(t("no_disease_data", lang))
     else:
-        selected = st.plotly_chart(build(map_df), use_container_width=True, on_select="rerun")
+        selected = st.plotly_chart(build(map_df, lang), use_container_width=True, on_select="rerun")
         if selected and selected.get("selection", {}).get("points"):
             clicked_iso3 = selected["selection"]["points"][0].get("location")
             if clicked_iso3 and clicked_iso3 != st.session_state.selected_iso3:
                 st.session_state.selected_iso3 = clicked_iso3
                 st.rerun()
 
-    # Outbreak article table (WHO + all Japanese sources)
+    # ── Article table ─────────────────────────────────────────────────────────
     st.divider()
-    st.subheader("アウトブレイク記事一覧")
+    st.subheader(t("article_table", lang))
     all_articles_for_table = st.session_state.articles_who + st.session_state.articles_ja
-    def _country_cell(a: dict) -> str:
-        iso3s = a.get("iso3_list", [])
-        if iso3s:
-            return ", ".join(country_parser.iso3_to_display_name(c) for c in iso3s)
-        region = a.get("region")
-        return f"[{region}]" if region else "不明"
 
     display_articles = [
         {
-            "日付": a.get("date", ""),
-            "ソース": a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", "")),
-            "疾患": a.get("disease_ja", ""),
-            "国": _country_cell(a),
-            "タイトル": a.get("title", ""),
+            t("date_col", lang): a.get("date", ""),
+            t("source_col", lang): (
+                a.get("publisher") or _SOURCE_LABEL.get(a.get("source", ""), a.get("source", ""))
+            ),
+            t("disease_col", lang): disease_ja_to_display(a.get("disease_ja", ""), lang),
+            t("country_col", lang): _country_cell(a, lang),
+            t("title_col", lang): a.get("title", ""),
             "URL": a.get("url", ""),
         }
         for a in all_articles_for_table
-        if a.get("disease_ja") in selected_diseases
+        if a.get("disease_ja") in selected_ja_names
     ]
     if display_articles:
         st.dataframe(
-            pd.DataFrame(display_articles).sort_values("日付", ascending=False),
+            pd.DataFrame(display_articles).sort_values(t("date_col", lang), ascending=False),
             use_container_width=True,
             hide_index=True,
-            column_config={"URL": st.column_config.LinkColumn("リンク", display_text="開く")},
+            column_config={"URL": st.column_config.LinkColumn(t("link", lang), display_text=t("open", lang))},
         )
     else:
-        st.info("選択された疾患の記事がありません。")
+        st.info(t("no_articles_filtered", lang))
 
-    # ECDC reports
+    # ── ECDC reports ──────────────────────────────────────────────────────────
     if st.session_state.articles_ecdc:
         st.divider()
-        st.subheader("最新 ECDC CDTR レポート")
+        st.subheader(t("ecdc_reports", lang))
         ecdc_rows = [
             {
-                "発行日": r.get("date", ""),
-                "タイトル": r.get("title", ""),
+                t("pub_date_col", lang): r.get("date", ""),
+                t("title_col", lang): r.get("title", ""),
                 "URL": r.get("url", ""),
             }
             for r in st.session_state.articles_ecdc
         ]
         st.dataframe(
-            pd.DataFrame(ecdc_rows).sort_values("発行日", ascending=False),
+            pd.DataFrame(ecdc_rows).sort_values(t("pub_date_col", lang), ascending=False),
             use_container_width=True,
             hide_index=True,
-            column_config={"URL": st.column_config.LinkColumn("リンク", display_text="開く")},
+            column_config={"URL": st.column_config.LinkColumn(t("link", lang), display_text=t("open", lang))},
         )
 
 else:
-    st.subheader("世界アウトブレイクマップ")
-    st.info("「データ取得」ボタンを押すとマップが表示されます。")
+    st.subheader(t("map_title", lang))
+    no_data_msg = (
+        f"「{t('fetch_data', lang)}」ボタンを押すとマップが表示されます。"
+        if lang == "ja"
+        else f"Click \"{t('fetch_data', lang)}\" to display the map."
+    )
+    st.info(no_data_msg)

@@ -542,6 +542,48 @@ def iso3_to_display_name(iso3: str) -> str:
     return country.name if country else iso3
 
 
+# Clean English display names for countries whose pycountry name is verbose
+_ISO3_EN_OVERRIDE: dict[str, str] = {
+    "COD": "DR Congo",
+    "PRK": "North Korea",
+    "KOR": "South Korea",
+    "IRN": "Iran",
+    "SYR": "Syria",
+    "VNM": "Vietnam",
+    "BOL": "Bolivia",
+    "TZA": "Tanzania",
+    "LAO": "Laos",
+    "MDA": "Moldova",
+    "PSE": "Palestine",
+    "TUR": "Turkey",
+    "COG": "Republic of Congo",
+    "CZE": "Czech Republic",
+    "VEN": "Venezuela",
+    "GBR": "United Kingdom",
+    "USA": "United States",
+    "ARE": "UAE",
+    "FSM": "Micronesia",
+    "SWZ": "Eswatini",
+    "CAF": "Central African Republic",
+    "TTO": "Trinidad and Tobago",
+    "STP": "São Tomé and Príncipe",
+    "BIH": "Bosnia and Herzegovina",
+    "MKD": "North Macedonia",
+    "SDN": "Sudan",
+    "SSD": "South Sudan",
+}
+
+
+def get_country_name(iso3: str, lang: str = "ja") -> str:
+    """Return the display name for iso3 in the given language ('ja' or 'en')."""
+    if lang == "en":
+        if iso3 in _ISO3_EN_OVERRIDE:
+            return _ISO3_EN_OVERRIDE[iso3]
+        country = pycountry.countries.get(alpha_3=iso3)
+        return country.name if country else iso3
+    return iso3_to_display_name(iso3)
+
+
 def extract_countries_from_title_ja(title: str) -> list[str]:
     """Legacy wrapper: delegates to extract_countries."""
     return extract_countries(title)
