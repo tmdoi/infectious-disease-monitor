@@ -10,9 +10,9 @@ from __future__ import annotations
 DISEASE_ENTRIES: list[dict[str, str]] = [
     {"id": "ebola",        "ja": "エボラ出血熱",         "en": "Ebola"},
     {"id": "marburg",      "ja": "マールブルグ病",         "en": "Marburg"},
-    {"id": "h5n1",         "ja": "H5N1型鳥インフルエンザ", "en": "Avian Influenza (H5N1)"},
-    {"id": "h7n9",         "ja": "H7N9型鳥インフルエンザ", "en": "Avian Influenza (H7N9)"},
-    {"id": "h9n2",         "ja": "H9N2型鳥インフルエンザ", "en": "Avian Influenza (H9N2)"},
+    {"id": "h5n1",         "ja": "H5N1型鳥インフルエンザ", "en": "H5N1 Avian Influenza"},
+    {"id": "h7n9",         "ja": "H7N9型鳥インフルエンザ", "en": "H7N9 Avian Influenza"},
+    {"id": "h9n2",         "ja": "H9N2型鳥インフルエンザ", "en": "H9N2 Avian Influenza"},
     {"id": "avian_flu",    "ja": "鳥インフルエンザ",       "en": "Avian Influenza"},
     {"id": "mers",         "ja": "MERS-CoV",             "en": "MERS-CoV"},
     {"id": "lassa",        "ja": "ラッサ熱",              "en": "Lassa Fever"},

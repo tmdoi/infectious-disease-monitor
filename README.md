@@ -122,6 +122,9 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 ## Changelog
 
 ### 2026-05-30 (latest)
+- Fixed avian influenza subtype labels (H5N1/H7N9/H9N2) being indistinguishable in English mode (subtype now shown first: "H5N1 Avian Influenza")
+
+### 2026-05-30 (prev latest)
 - Use an English-UI screenshot in the English README
 
 ### 2026-05-30 (prev latest 5)
