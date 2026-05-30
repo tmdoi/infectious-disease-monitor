@@ -64,8 +64,17 @@ A Streamlit application that visualizes WHO / ECDC outbreak information and Japa
 # Clone the repository
 git clone <repository-url>
 cd infectious-disease-monitor
+```
 
-# Install dependencies
+With translation (Apple Silicon Mac / Windows / Linux):
+
+```bash
+uv sync --extra translation
+```
+
+Without translation (Intel Mac, or if translation is not needed):
+
+```bash
 uv sync
 ```
 
@@ -77,7 +86,7 @@ uv run streamlit run app.py
 
 The app opens at `http://localhost:8501`. On first launch, outbreak data is fetched automatically.
 
-> **Note:** The first launch also downloads the Japanese ↔ English translation models (~50 MB each) via argos-translate. An internet connection is required only for this one-time download; subsequent runs work fully offline.
+> **Note:** If you installed with `--extra translation`, the Japanese ↔ English translation models (~50 MB each) are downloaded on first launch via argos-translate. An internet connection is required only for this one-time download; subsequent runs work fully offline. Without the translation extra, the UI language toggle still works but article titles are shown in their original language.
 
 ## Directory Structure
 
@@ -113,6 +122,9 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 ## Changelog
 
 ### 2026-05-30 (latest)
+- Made translation an optional dependency so the app runs even without the translation library (e.g. on Intel Macs); split install instructions into with/without translation
+
+### 2026-05-30 (prev latest 2)
 - Added a Supported Platforms section; noted that the translation feature is unavailable on Intel Macs
 
 ### 2026-05-30 (prev latest)

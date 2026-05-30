@@ -55,6 +55,7 @@ _LABELS: dict[str, dict[str, str]] = {
         # Translation
         "translation_preparing": "翻訳モデルを準備中...",
         "translation_unavailable": "⚠️ 翻訳モデルが利用できません。初回のみネット接続が必要です。",
+        "translation_disabled_note": "※ この環境では記事タイトルの自動翻訳は無効です(UI表示の言語切替は利用できます)",
         # About / How to Use
         "about_header": "ℹ️ About",
         "about_body": """\
@@ -141,6 +142,7 @@ _LABELS: dict[str, dict[str, str]] = {
         # Translation
         "translation_preparing": "Preparing translation models...",
         "translation_unavailable": "⚠️ Translation models unavailable. Internet required on first run.",
+        "translation_disabled_note": "Note: Automatic article title translation is disabled in this environment (UI language switching is still available).",
         # About / How to Use
         "about_header": "ℹ️ About",
         "about_body": """\

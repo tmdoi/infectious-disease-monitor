@@ -64,8 +64,17 @@ WHO / ECDC のアウトブレイク情報と日本語ニュースを、インタ
 # リポジトリのクローン
 git clone <repository-url>
 cd infectious-disease-monitor
+```
 
-# 依存パッケージのインストール
+翻訳機能を使う場合(Apple Silicon Mac / Windows / Linux):
+
+```bash
+uv sync --extra translation
+```
+
+翻訳機能なし(Intel Mac、または翻訳が不要な場合):
+
+```bash
 uv sync
 ```
 
@@ -77,7 +86,7 @@ uv run streamlit run app.py
 
 ブラウザで `http://localhost:8501` が開きます。初回起動時はアウトブレイクデータを自動取得します。
 
-> **注意:** 初回起動時には argos-translate の日英翻訳モデル(各 ~50 MB)もダウンロードされます。ネット接続が必要なのはこの1回のみで、以降は完全オフラインで動作します。
+> **注意:** `--extra translation` でインストールした場合、初回起動時に argos-translate の日英翻訳モデル(各 ~50 MB)もダウンロードされます。ネット接続が必要なのはこの1回のみで、以降は完全オフラインで動作します。翻訳機能なしの場合は、UIの言語切替は利用できますが記事タイトルは原文表示になります。
 
 ## ディレクトリ構造
 
@@ -111,6 +120,9 @@ uv run streamlit run app.py
 [MIT](LICENSE)
 
 ## 更新履歴
+
+### 2026-05-30(6回目)
+- 翻訳機能を任意依存に変更。翻訳ライブラリが無い環境(Intel Mac等)でもアプリが起動するよう改修。インストール手順を翻訳あり/なしで分離
 
 ### 2026-05-30(5回目)
 - 動作環境セクションを追加。Intel Mac では翻訳機能が非対応である旨を明記

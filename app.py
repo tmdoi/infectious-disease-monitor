@@ -231,7 +231,9 @@ if "lang" not in st.session_state:
 # ── Session state: translation models ────────────────────────────────────────
 
 if "translation_ready" not in st.session_state:
-    if translator.check_models_installed():
+    if not translator.TRANSLATION_AVAILABLE:
+        st.session_state["translation_ready"] = False
+    elif translator.check_models_installed():
         translator._models_ready = True
         st.session_state["translation_ready"] = True
     else:
@@ -395,6 +397,8 @@ with st.sidebar:
 
     # ── About / How to Use ────────────────────────────────────────────────────
     st.divider()
+    if not translator.TRANSLATION_AVAILABLE:
+        st.caption(t("translation_disabled_note", lang))
     with st.expander(t("howto_header", lang)):
         st.markdown(t("howto_body", lang))
     with st.expander(t("about_header", lang)):

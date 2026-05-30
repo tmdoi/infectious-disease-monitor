@@ -9,6 +9,12 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+try:
+    import argostranslate  # noqa: F401
+    TRANSLATION_AVAILABLE = True
+except ImportError:
+    TRANSLATION_AVAILABLE = False
+
 _CACHE_FILE = Path(__file__).parents[1] / "data" / "cache" / "translations.json"
 
 # Whether models are confirmed ready this session
@@ -172,6 +178,8 @@ def _normalize_en_disease_names(text: str) -> str:
 
 def check_models_installed() -> bool:
     """Return True if both ja↔en translation models are installed."""
+    if not TRANSLATION_AVAILABLE:
+        return False
     try:
         from argostranslate import translate
         installed = translate.get_installed_languages()
@@ -188,6 +196,9 @@ def check_models_installed() -> bool:
 def ensure_models() -> bool:
     """Download and install ja↔en models if missing. Returns True if models ready."""
     global _models_ready
+    if not TRANSLATION_AVAILABLE:
+        _models_ready = False
+        return False
     if _models_ready is True:
         return True
     if check_models_installed():
@@ -222,6 +233,8 @@ def ensure_models() -> bool:
 def translate(text: str, target_lang: str) -> str:
     """Translate text to target_lang ('ja' or 'en'). Returns original on failure."""
     global _models_ready
+    if not TRANSLATION_AVAILABLE:
+        return text
     if not text.strip():
         return text
     src_lang = detect_language(text)
