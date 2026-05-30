@@ -393,6 +393,13 @@ with st.sidebar:
                 unsafe_allow_html=True,
             )
 
+    # ── About / How to Use ────────────────────────────────────────────────────
+    st.divider()
+    with st.expander(t("howto_header", lang)):
+        st.markdown(t("howto_body", lang))
+    with st.expander(t("about_header", lang)):
+        st.markdown(t("about_body", lang))
+
 
 # ── Main area ─────────────────────────────────────────────────────────────────
 

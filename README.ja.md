@@ -95,6 +95,9 @@ uv run streamlit run app.py
 
 ## 更新履歴
 
+### 2026-05-30(4回目)
+- サイドバーに About と使い方メニューを追加(日英対応、st.expander で折りたたみ式)
+
 ### 2026-05-30
 - README を日英2ファイル構成に整備(英語をメイン、日本語版を README.ja.md に分離)
 

@@ -55,6 +55,39 @@ _LABELS: dict[str, dict[str, str]] = {
         # Translation
         "translation_preparing": "翻訳モデルを準備中...",
         "translation_unavailable": "⚠️ 翻訳モデルが利用できません。初回のみネット接続が必要です。",
+        # About / How to Use
+        "about_header": "ℹ️ About",
+        "about_body": """\
+**新興感染症 世界モニタリングダッシュボード**は、WHO・ECDCおよび主要報道機関の感染症アウトブレイク情報を世界地図上にリアルタイム集約・可視化するツールです。
+
+**データソース**
+- 🌐 WHO Disease Outbreak News (DON)
+- 🇪🇺 ECDC 週次感染症脅威レポート (CDTR)
+- 📰 Yahoo Japan / 🗞 47NEWS / 🔍 Google ニュース
+- 公共放送・全国紙・通信社・公的機関のみ配信
+
+**対象疾患** (18疾患)
+エボラ出血熱、マールブルグ病、鳥インフルエンザ、MERS-CoV、ラッサ熱、デング熱、ジカ熱、ハンタウイルス、ニパウイルス、エムポックス、コレラ、黄熱、チクングニア熱、クリミア・コンゴ出血熱、麻疹 など
+
+**免責事項**
+- 本ツールは情報集約が目的であり、医学的・公衆衛生上の判断の根拠とすべきではありません
+- 各記事の著作権は配信元に帰属します。タイトルとリンクのみ表示しています
+- データの正確性・完全性は保証されません
+
+**ライセンス:** MIT
+""",
+        "howto_header": "📖 使い方",
+        "howto_body": """\
+1. **「🔄 データ取得」**ボタンを押して最新情報を取得します
+2. **地図上の色付きの国をクリック**すると、その国の関連記事がサイドバーに表示されます
+   - 色が濃いほどアウトブレイク件数が多い国です
+3. **記事タイトルをクリック**すると新しいタブで元記事が開きます
+4. **「疾患フィルタ」**で表示する感染症を絞り込めます
+5. **言語トグル(🇯🇵 日本語 / 🇬🇧 English)**で表示言語を切り替えます。記事タイトルも自動翻訳されます
+6. **「広域・地域不明ニュース」**セクションには、特定の国に紐付けられなかった記事が表示されます
+
+> 地図右のカラーバーがアウトブレイク件数のスケールを示します。
+""",
     },
     "en": {
         # App header
@@ -108,6 +141,39 @@ _LABELS: dict[str, dict[str, str]] = {
         # Translation
         "translation_preparing": "Preparing translation models...",
         "translation_unavailable": "⚠️ Translation models unavailable. Internet required on first run.",
+        # About / How to Use
+        "about_header": "ℹ️ About",
+        "about_body": """\
+**Emerging Infectious Disease Global Monitoring Dashboard** aggregates and visualizes outbreak information from WHO, ECDC, and major news outlets on an interactive world map in real time.
+
+**Data Sources**
+- 🌐 WHO Disease Outbreak News (DON)
+- 🇪🇺 ECDC Weekly Communicable Disease Threats Report (CDTR)
+- 📰 Yahoo Japan / 🗞 47NEWS / 🔍 Google News
+- Trusted sources only: public broadcasters, national newspapers, wire services, government bodies
+
+**Diseases Monitored** (18 diseases)
+Ebola, Marburg, Avian Influenza, MERS-CoV, Lassa Fever, Dengue, Zika, Hantavirus, Nipah, Mpox, Cholera, Yellow Fever, Chikungunya, Crimean-Congo Hemorrhagic Fever, Measles, and more
+
+**Disclaimer**
+- This tool is for **information aggregation only** and must not be used as a basis for medical or public health decisions
+- Article copyright belongs to each publisher. Only titles and links are displayed
+- Accuracy and completeness of data are not guaranteed
+
+**License:** MIT
+""",
+        "howto_header": "📖 How to Use",
+        "howto_body": """\
+1. Click **"🔄 Fetch Data"** to load the latest outbreak information
+2. **Click a colored country on the map** to see related articles in the sidebar
+   - Darker color = more outbreak reports for that country
+3. **Click an article title** to open the original article in a new tab
+4. Use the **Disease Filter** to narrow down which diseases are shown
+5. Use the **language toggle (🇯🇵 日本語 / 🇬🇧 English)** to switch the display language. Article titles are translated automatically
+6. Articles that cannot be linked to a specific country appear in the **"Regional / Unspecified News"** section
+
+> The color bar on the right of the map shows the outbreak count scale.
+""",
     },
 }
 

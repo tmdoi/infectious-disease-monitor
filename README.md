@@ -95,8 +95,8 @@ The app opens at `http://localhost:8501`. On first launch, outbreak data is fetc
 
 ## Changelog
 
-### 2026-05-30
-- Split README into English (main) and Japanese (README.ja.md) versions
+### 2026-05-30 (latest)
+- Added About and How-to-Use expandable sections to the sidebar (bilingual, language-toggle aware)
 
 ### 2026-05-30 (patch 2)
 - Fixed missing translation in article table title column (now uses same cache as sidebar)
