@@ -4,7 +4,7 @@ English | [日本語](README.ja.md)
 
 A Streamlit application that visualizes WHO / ECDC outbreak information and Japanese news in real time on an interactive world choropleth map.
 
-![screenshot](docs/screenshot.png)
+![screenshot](docs/screenshot-en.png)
 
 ## Features
 
@@ -122,6 +122,9 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 ## Changelog
 
 ### 2026-05-30 (latest)
+- Use an English-UI screenshot in the English README
+
+### 2026-05-30 (prev latest 5)
 - Improved the disabled-translation badge (light orange background); added a help section explaining how to enable translation and the Intel Mac limitation
 
 ### 2026-05-30 (prev latest 4)
