@@ -1,122 +1,149 @@
-# 新興感染症 世界モニタリングダッシュボード
+English | [日本語](README.ja.md)
 
-WHO / ECDC / Yahoo Japan / 47NEWS / Google ニュース のアウトブレイク情報を世界地図（コロプレスマップ）でリアルタイム可視化する Streamlit アプリです。
+# Emerging Infectious Disease Global Monitoring Dashboard
 
-## 機能
+A Streamlit application that visualizes WHO / ECDC outbreak information and Japanese news in real time on an interactive world choropleth map.
 
-- 世界全190カ国を対象とした感染症アウトブレイクの地図表示
-- 16疾患(エボラ・麻疹・デング熱など)の疾患フィルタ
-- 国クリックで詳細情報と WHO DON 記事リンクを表示
-- 手動ボタンでデータを最新状態に更新(過去3ヶ月分、キャッシュ付き)
-- 5データソースを並列取得、ソース別エラーハンドリング付き
+![screenshot](docs/screenshot.png)
 
-## データソース
+## Features
 
-| ソース | 内容 |
-|--------|------|
-| [WHO Disease Outbreak News (DON)](https://www.who.int/emergencies/disease-outbreak-news) | WHO が公表する感染症アウトブレイク速報 |
-| [ECDC CDTR](https://www.ecdc.europa.eu/en/publications-and-data/monitoring/weekly-threats-reports) | 欧州疾病予防管理センターの週次レポート |
-| [Yahoo Japan トピックス](https://news.yahoo.co.jp/) | Yahoo Japan 主要・国際トピックス RSS |
-| [47NEWS](https://www.47news.jp/) | 共同通信系地方紙連合ニュース RSS |
-| [Google ニュース](https://news.google.com/) | 疾患キーワードによる Google News RSS 検索 |
+- **6 data sources** integrated in parallel: WHO DON, ECDC CDTR, Yahoo News Japan, 47NEWS, Google News, NHK
+- **Interactive world map** — click any country to see related articles in the sidebar
+- **Disease filter** — 18 diseases including Ebola, Measles, Dengue, Hantavirus, Mpox and more
+- **Source whitelist** — public broadcasters, national newspapers, wire services and government bodies only
+- **Country extraction** — alias dictionary (80+ countries), multi-country articles, regional/unspecified fallback
+- **Bilingual UI** — Japanese / English toggle; article titles translated locally via argos-translate (no API key needed)
 
-## セットアップ
+## Data Sources
 
-### 前提条件
+| Source | Description |
+|--------|-------------|
+| [WHO Disease Outbreak News (DON)](https://www.who.int/emergencies/disease-outbreak-news) | WHO official outbreak news |
+| [ECDC CDTR](https://www.ecdc.europa.eu/en/publications-and-data/monitoring/weekly-threats-reports) | ECDC weekly communicable disease threat reports |
+| [Yahoo Japan News](https://news.yahoo.co.jp/) | Major / international topics RSS |
+| [47NEWS](https://www.47news.jp/) | Kyodo News regional network RSS |
+| [Google News](https://news.google.com/) | Keyword-filtered Google News RSS (whitelisted sources only) |
 
-- Python 3.11 以上
-- [uv](https://docs.astral.sh/uv/) （パッケージマネージャ）
+## Tech Stack
 
-### 手順
+| | |
+|---|---|
+| **Language** | Python 3.11+ |
+| **UI** | [Streamlit](https://streamlit.io/) |
+| **Map** | [Plotly](https://plotly.com/python/) choropleth |
+| **Package manager** | [uv](https://docs.astral.sh/uv/) |
+| **Translation** | [argos-translate](https://github.com/argosopentech/argos-translate) (fully local) |
+| **Country lookup** | [pycountry](https://pypi.org/project/pycountry/) |
+| **Feed parsing** | [feedparser](https://pypi.org/project/feedparser/) |
+| **HTML parsing** | [BeautifulSoup4](https://pypi.org/project/beautifulsoup4/) |
+
+## Setup
+
+### Prerequisites
+
+- Python 3.11 or later
+- [uv](https://docs.astral.sh/uv/) package manager
+
+### Installation
 
 ```bash
-# リポジトリのクローン
+# Clone the repository
 git clone <repository-url>
 cd infectious-disease-monitor
 
-# 依存パッケージのインストール
+# Install dependencies
 uv sync
 ```
 
-## 実行方法
+### Run
 
 ```bash
 uv run streamlit run app.py
 ```
 
-ブラウザで `http://localhost:8501` が自動的に開きます。初回起動時はデータを自動取得します。
+The app opens at `http://localhost:8501`. On first launch, outbreak data is fetched automatically.
 
-## ディレクトリ構造
+> **Note:** The first launch also downloads the Japanese ↔ English translation models (~50 MB each) via argos-translate. An internet connection is required only for this one-time download; subsequent runs work fully offline.
+
+## Directory Structure
 
 ```
 .
-├── app.py                  # Streamlit エントリーポイント
+├── app.py                      # Streamlit entry point
 ├── src/
-│   ├── fetchers/           # 外部データ取得モジュール
-│   ├── parsers/            # データ変換モジュール（国名→ISO3、疾患フィルタ）
-│   ├── cache.py            # JSON キャッシュ管理
-│   └── visualizers/        # 地図描画モジュール
+│   ├── fetchers/               # Data fetchers (WHO, ECDC, Yahoo, 47NEWS, Google)
+│   ├── parsers/                # Country extraction, disease filter, source whitelist
+│   ├── data/                   # Glossary, UI labels, mock articles
+│   ├── visualizers/            # Choropleth map builder
+│   ├── translator.py           # argos-translate wrapper + cache
+│   └── cache.py                # JSON cache management
 └── data/
-    └── cache/              # 取得データのキャッシュ（Git 管理外）
+    └── cache/                  # Runtime cache — excluded from Git
 ```
 
-## 技術スタック
+## Disclaimer
 
-- **Python 3.11**
-- **[Streamlit](https://streamlit.io/)** — Web UI フレームワーク
-- **[Plotly](https://plotly.com/python/)** — インタラクティブ地図描画
-- **[uv](https://docs.astral.sh/uv/)** — パッケージ管理
+- This tool is intended for **information aggregation only** and must not be used as the basis for medical or public health decisions.
+- Article titles and links are displayed for reference. Copyright of each article belongs to its respective publisher.
+- Please respect each website's terms of service and avoid excessive automated access.
+- Accuracy and completeness of the data are not guaranteed.
 
-## 更新履歴
+## License
 
-### 2026-05-30(2回目)
-- 下部の記事一覧テーブルのタイトル列を日英翻訳に対応(サイドバーと同じキャッシュを共用)
-- サイドバーのソース名(読売新聞→Yomiuri Shimbun、時事通信→Jiji Press など)を日英対訳に対応
-- source_whitelist.py に PUBLISHER_EN 辞書と localize_label() を追加
+[MIT](LICENSE)
+
+## Changelog
 
 ### 2026-05-30
-- 言語トグルの対応範囲を全画面に拡大: ページタイトル・サブタイトル・各見出しを日英切替
-- 疾患フィルタの選択肢を日英対応(Ebola, Measles など)、言語切替時も選択状態を維持
-- 地図の凡例(アウトブレイク数 / Number of Outbreaks)・ホバーツールチップを言語連動
-- 下部テーブルの列ヘッダーとデータ(国名・疾患名)を日英切替
-- UIラベル辞書(ui_labels.py)と疾患用語集(glossary.py)を整備し全コンポーネントで共通化
-- country.py に get_country_name(iso3, lang) を追加(英語国名は pycountry から取得)
+- Split README into English (main) and Japanese (README.ja.md) versions
 
-### 2026-05-30(初版)
-- 日英言語トグルを追加(画面上部)
-- argos-translate による完全ローカル翻訳機能を実装(記事タイトルの日英相互翻訳)
-- 疾患名・国名の確定訳用語集で誤訳を防止
-- 翻訳結果のキャッシュ機構を追加(data/cache/translations.json)
+### 2026-05-30 (patch 2)
+- Fixed missing translation in article table title column (now uses same cache as sidebar)
+- Localized news source names in sidebar (Yomiuri Shimbun, Nikkei, Jiji Press, etc.)
+- Added `PUBLISHER_EN` dict and `localize_label()` to `source_whitelist.py`
 
-### 2026-05-25(5回目)
-- 国名抽出を強化(タイトル+概要から検出、表記揺れ辞書を80カ国以上に拡充)
-- 複数国記事は該当するすべての国に反映するよう変更
-- サイドバーに「広域・地域不明ニュース」セクションを新設
-- 国判定の精度ログ出力機能を追加(data/cache/country_extraction.log)
+### 2026-05-30 (patch 1)
+- Extended language toggle to all UI areas: page title, subtitles, headings
+- Disease filter options now switch language (Ebola, Measles, …); selection preserved across switches
+- Map colorbar and hover tooltip localized
+- Article table columns and data (country names, disease names) localized
+- Introduced `glossary.py` and `ui_labels.py` for centralized i18n; added `get_country_name(iso3, lang)` to `country.py`
 
-### 2026-05-25(4回目)
-- Google ニュース RSS にホワイトリストフィルタを導入(公共性の高いソースのみ通す)
-- 信頼ソースとして公共放送・全国紙・通信社・公的機関・アカデミアを定義
-- 都道府県(*.lg.jp など)とアカデミア(*.ac.jp, *.edu)はドメインパターンで判定
-- サイドバーに「配信元一覧」(件数の多い順)を追加
+### 2026-05-30 (initial)
+- Added Japanese / English language toggle
+- Implemented fully local article title translation via argos-translate
+- Disease and country name glossary to prevent mistranslations
+- Translation result cache (`data/cache/translations.json`)
+
+### 2026-05-25 (5th update)
+- Strengthened country extraction (title + summary, alias dictionary expanded to 80+ countries)
+- Multi-country articles now mapped to all matching countries
+- Added "Regional / Unspecified News" section to sidebar
+- Added country extraction accuracy log (`data/cache/country_extraction.log`)
+
+### 2026-05-25 (4th update)
+- Introduced source whitelist for Google News RSS (trusted sources only)
+- Defined trusted sources: public broadcasters, national newspapers, wire services, government bodies, academia
+- Domain-pattern matching for prefectural agencies (`*.lg.jp`) and academia (`*.ac.jp`, `*.edu`)
+- Added source breakdown list to sidebar
 
 ### 2026-05-25
-- WHO DON / ECDC CDTR の実データ取得を実装(過去3ヶ月、キャッシュ機構付き)
-- 疾患フィルタを16疾患に拡張(麻疹を新規追加、ハンタウイルス含む)
-- 疾患マルチセレクト UI をサイドバーに追加
-- 実データ取得失敗時のモックデータフォールバックを実装
-- コロプレスマップの色スケールを改善(度数1の視認性向上、離散的近似ステップ関数)
-- Yahoo Japan トピックスRSS(主要・国際)をデータソースに追加
-- 47NEWS RSS と Google ニュース RSS をデータソースに追加(計5ソース)
-- 5ソースの並列フェッチ(ThreadPoolExecutor)とソース別独立エラーハンドリング
-- 日本語国名→ISO3 変換マッピングを追加(主要70カ国)
-- 記事一覧にソースラベル(🌐 WHO / 🇪🇺 ECDC / 📰 Yahoo / 🗞 47NEWS / 🔍 Google)を表示
+- Implemented real data fetching for WHO DON / ECDC CDTR (past 3 months, with cache)
+- Expanded disease filter to 18 diseases (added Measles, Hantavirus)
+- Disease multiselect UI added to sidebar
+- Mock data fallback on fetch failure
+- Improved choropleth color scale (better visibility at count=1)
+- Added Yahoo Japan, 47NEWS, and Google News RSS as data sources (5 sources total)
+- Parallel fetching with `ThreadPoolExecutor`; independent per-source error handling
+- Japanese country name → ISO3 mapping (70+ countries)
+- Source labels in article list (🌐 WHO / 🇪🇺 ECDC / 📰 Yahoo / 🗞 47NEWS / 🔍 Google)
 
 ### 2026-05-21
-- 記事リンクの新規タブ表示(target="_blank")対応
-- データなし国クリック時の「データなし」表示
+- Article links open in new tab (`target="_blank"`)
+- "No data" message on click with no matching articles
 
 ### 2026-05-17
-- 世界地図クリックインタラクションを実装
-- 選択中の国の記事をサイドバーに表示
-- 初版リリース(モックデータによる世界アウトブレイクマップ)
+- Interactive world map click to select countries
+- Selected country articles shown in sidebar
+- Initial release (mock data choropleth)

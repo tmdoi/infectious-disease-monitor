@@ -52,9 +52,23 @@ uv run streamlit run app.py
 
 ## 更新ルール
 
-このプロジェクトに変更を加えた際は、必ず README.md の末尾の「更新履歴」セクションに以下のフォーマットで追記すること:
+このプロジェクトに変更を加えた際は、**README.md(英語版)と README.ja.md(日本語版)の両方**の「更新履歴 / Changelog」セクションに追記すること。
 
+- README.md(英語版): 英語で記載
+- README.ja.md(日本語版): 日本語で記載
+- 新しい変更は上(新しい日付が上)に追記する
+- 日付は実装日
+
+フォーマット:
+
+**README.md (English)**
+```
+### YYYY-MM-DD
+- Brief description in English (1–3 lines)
+```
+
+**README.ja.md (日本語)**
+```
 ### YYYY-MM-DD
 - 変更内容を簡潔に1-3行で記載
-
-新しい変更は上(新しい日付が上)に追記する。日付は実装日。
+```
