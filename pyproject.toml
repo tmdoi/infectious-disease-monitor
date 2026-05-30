@@ -1,8 +1,9 @@
 [project]
 name = "infectious-disease-monitor"
 version = "0.1.0"
-description = "Add your description here"
+description = "Global emerging infectious disease monitoring dashboard (WHO/ECDC and major news outlets, visualized on a world map)"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = [
     "argostranslate>=1.11.0",
