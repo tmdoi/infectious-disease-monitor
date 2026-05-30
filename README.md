@@ -89,6 +89,10 @@ The app opens at `http://localhost:8501`. On first launch, outbreak data is fetc
 - Please respect each website's terms of service and avoid excessive automated access.
 - Accuracy and completeness of the data are not guaranteed.
 
+## Development
+
+This project was developed with the help of [Claude Code](https://claude.ai/code) (Anthropic's AI coding assistant), using an AI pair-programming approach for everything from design decisions to implementation and debugging.
+
 ## License
 
 [MIT](LICENSE)
@@ -96,6 +100,7 @@ The app opens at `http://localhost:8501`. On first launch, outbreak data is fetc
 ## Changelog
 
 ### 2026-05-30 (latest)
+- Added a note about the development process (built with Claude Code)
 - Added About and How-to-Use expandable sections to the sidebar (bilingual, language-toggle aware)
 
 ### 2026-05-30 (patch 2)
