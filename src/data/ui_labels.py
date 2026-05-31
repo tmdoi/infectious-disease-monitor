@@ -6,7 +6,7 @@ _LABELS: dict[str, dict[str, str]] = {
     "ja": {
         # App header
         "app_title": "新興感染症 世界モニタリングダッシュボード",
-        "app_subtitle": "WHO / ECDC / Yahoo Japan / 47NEWS / Google ニュース のアウトブレイク情報をリアルタイムで可視化します。",
+        "app_subtitle": "WHO / ECDC / Yahoo Japan / Google ニュース のアウトブレイク情報をリアルタイムで可視化します。",
         # Sidebar
         "disease_filter": "疾患フィルタ",
         "select_diseases": "表示する疾患を選択",
@@ -22,7 +22,7 @@ _LABELS: dict[str, dict[str, str]] = {
         "last_updated": "最終更新",
         "data_not_fetched": "データ未取得 — 「データ取得」ボタンを押してください。",
         "using_sample": "⚠️ サンプルデータ表示中 — 「データ取得」ボタンで実データに切り替えできます。",
-        "fetching": "WHO DON / ECDC CDTR / Yahoo Japan / 47NEWS / Google ニュース からデータを取得中…",
+        "fetching": "WHO DON / ECDC CDTR / Yahoo Japan / Google ニュース からデータを取得中…",
         "fetch_complete": "取得完了",
         # Map
         "map_title": "世界アウトブレイクマップ",
@@ -71,7 +71,7 @@ _LABELS: dict[str, dict[str, str]] = {
 **データソース**
 - 🌐 WHO Disease Outbreak News (DON)
 - 🇪🇺 ECDC 週次感染症脅威レポート (CDTR)
-- 📰 Yahoo Japan / 🗞 47NEWS / 🔍 Google ニュース
+- 📰 Yahoo Japan / 🔍 Google ニュース (47NEWS・全国紙・通信社を含む)
 - 公共放送・全国紙・通信社・公的機関のみ配信
 
 **対象疾患** (18疾患)
@@ -100,7 +100,7 @@ _LABELS: dict[str, dict[str, str]] = {
     "en": {
         # App header
         "app_title": "Emerging Infectious Disease Global Monitoring Dashboard",
-        "app_subtitle": "Real-time visualization of outbreak information from WHO / ECDC / Yahoo Japan / 47NEWS / Google News.",
+        "app_subtitle": "Real-time visualization of outbreak information from WHO / ECDC / Yahoo Japan / Google News.",
         # Sidebar
         "disease_filter": "Disease Filter",
         "select_diseases": "Select diseases to display",
@@ -116,7 +116,7 @@ _LABELS: dict[str, dict[str, str]] = {
         "last_updated": "Last updated",
         "data_not_fetched": "No data yet — click \"Fetch Data\".",
         "using_sample": "⚠️ Showing sample data — click \"Fetch Data\" to load real data.",
-        "fetching": "Fetching from WHO DON / ECDC CDTR / Yahoo Japan / 47NEWS / Google News…",
+        "fetching": "Fetching from WHO DON / ECDC CDTR / Yahoo Japan / Google News…",
         "fetch_complete": "Fetch complete",
         # Map
         "map_title": "Global Outbreak Map",
@@ -165,7 +165,7 @@ _LABELS: dict[str, dict[str, str]] = {
 **Data Sources**
 - 🌐 WHO Disease Outbreak News (DON)
 - 🇪🇺 ECDC Weekly Communicable Disease Threats Report (CDTR)
-- 📰 Yahoo Japan / 🗞 47NEWS / 🔍 Google News
+- 📰 Yahoo Japan / 🔍 Google News (incl. 47NEWS, major dailies, wire services)
 - Trusted sources only: public broadcasters, national newspapers, wire services, government bodies
 
 **Diseases Monitored** (18 diseases)

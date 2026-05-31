@@ -8,7 +8,7 @@ WHO / ECDC のアウトブレイク情報と日本語ニュースを、インタ
 
 ## 主な機能
 
-- **6データソース**を並列取得: WHO DON、ECDC CDTR、Yahoo ニュース Japan、47NEWS、Google ニュース、NHK
+- **5データソース**を並列取得: WHO DON、ECDC CDTR、Yahoo ニュース Japan、Google ニュース、NHK (Google ニュース経由で 47NEWS・全国紙・通信社を集約)
 - **インタラクティブ世界地図** — 国をクリックするとサイドバーに関連記事を表示
 - **疾患フィルタ** — エボラ、麻疹、デング熱、ハンタウイルス、エムポックスなど18疾患
 - **配信元ホワイトリスト** — 公共放送・全国紙・通信社・公的機関のみ
@@ -22,8 +22,7 @@ WHO / ECDC のアウトブレイク情報と日本語ニュースを、インタ
 | [WHO Disease Outbreak News (DON)](https://www.who.int/emergencies/disease-outbreak-news) | WHO が公表する感染症アウトブレイク速報 |
 | [ECDC CDTR](https://www.ecdc.europa.eu/en/publications-and-data/monitoring/weekly-threats-reports) | 欧州疾病予防管理センターの週次レポート |
 | [Yahoo Japan トピックス](https://news.yahoo.co.jp/) | Yahoo Japan 主要・国際トピックス RSS |
-| [47NEWS](https://www.47news.jp/) | 共同通信系地方紙連合ニュース RSS |
-| [Google ニュース](https://news.google.com/) | 疾患キーワードによる Google News RSS(ホワイトリスト済み) |
+| [Google ニュース](https://news.google.com/) | 疾患キーワードによる Google News RSS(ホワイトリスト済み — 47NEWS・全国紙・通信社を含む) |
 
 ## 技術スタック
 
@@ -94,7 +93,7 @@ uv run streamlit run app.py
 .
 ├── app.py                      # Streamlit エントリーポイント
 ├── src/
-│   ├── fetchers/               # データ取得(WHO / ECDC / Yahoo / 47NEWS / Google)
+│   ├── fetchers/               # データ取得(WHO / ECDC / Yahoo / Google)
 │   ├── parsers/                # 国名抽出・疾患フィルタ・配信元ホワイトリスト
 │   ├── data/                   # 用語集・UIラベル・モックデータ
 │   ├── visualizers/            # コロプレスマップ描画
@@ -122,6 +121,7 @@ uv run streamlit run app.py
 ## 更新履歴
 
 ### 2026-05-31
+- 動作していない 47NEWS 独立フェッチャーを削除(47NEWS の記事は Google ニュース経由で取得継続)。データソースの記述を実態に合わせて整理
 - Google ニュース等のタイトルに混入していたHTMLタグ・配信元名サフィックスを除去するクリーニングを追加
 - Streamlit の非推奨 `use_container_width` を新記法 `width` に移行(廃止対応)
 

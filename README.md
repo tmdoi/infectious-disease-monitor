@@ -8,7 +8,7 @@ A Streamlit application that visualizes WHO / ECDC outbreak information and Japa
 
 ## Features
 
-- **6 data sources** integrated in parallel: WHO DON, ECDC CDTR, Yahoo News Japan, 47NEWS, Google News, NHK
+- **5 data sources** integrated in parallel: WHO DON, ECDC CDTR, Yahoo News Japan, Google News, NHK (Google News aggregates 47NEWS, major dailies, wire services)
 - **Interactive world map** — click any country to see related articles in the sidebar
 - **Disease filter** — 18 diseases including Ebola, Measles, Dengue, Hantavirus, Mpox and more
 - **Source whitelist** — public broadcasters, national newspapers, wire services and government bodies only
@@ -22,8 +22,7 @@ A Streamlit application that visualizes WHO / ECDC outbreak information and Japa
 | [WHO Disease Outbreak News (DON)](https://www.who.int/emergencies/disease-outbreak-news) | WHO official outbreak news |
 | [ECDC CDTR](https://www.ecdc.europa.eu/en/publications-and-data/monitoring/weekly-threats-reports) | ECDC weekly communicable disease threat reports |
 | [Yahoo Japan News](https://news.yahoo.co.jp/) | Major / international topics RSS |
-| [47NEWS](https://www.47news.jp/) | Kyodo News regional network RSS |
-| [Google News](https://news.google.com/) | Keyword-filtered Google News RSS (whitelisted sources only) |
+| [Google News](https://news.google.com/) | Keyword-filtered Google News RSS (whitelisted sources only — incl. 47NEWS, major dailies, wire services) |
 
 ## Tech Stack
 
@@ -94,7 +93,7 @@ The app opens at `http://localhost:8501`. On first launch, outbreak data is fetc
 .
 ├── app.py                      # Streamlit entry point
 ├── src/
-│   ├── fetchers/               # Data fetchers (WHO, ECDC, Yahoo, 47NEWS, Google)
+│   ├── fetchers/               # Data fetchers (WHO, ECDC, Yahoo, Google)
 │   ├── parsers/                # Country extraction, disease filter, source whitelist
 │   ├── data/                   # Glossary, UI labels, mock articles
 │   ├── visualizers/            # Choropleth map builder
@@ -122,6 +121,7 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 ## Changelog
 
 ### 2026-05-31
+- Removed the non-functional standalone 47NEWS fetcher (47NEWS articles are still collected via Google News); updated data source description accordingly
 - Clean up HTML tags and source-name suffixes leaking into article titles (Google News, Yahoo, 47NEWS)
 - Migrated deprecated `use_container_width` to the new `width` API (Streamlit)
 

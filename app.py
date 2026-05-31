@@ -16,7 +16,7 @@ from src.data.glossary import (
 )
 from src.data.mock_articles import ARTICLES as _MOCK_ARTICLES
 from src.data.ui_labels import t
-from src.fetchers import ecdc_cdtr, google_news, news_47, who_don, yahoo_topics
+from src.fetchers import ecdc_cdtr, google_news, who_don, yahoo_topics
 from src.parsers import country as country_parser
 from src.parsers import disease_filter
 from src.parsers.source_whitelist import localize_label
@@ -108,13 +108,6 @@ def _fetch_all() -> tuple[list[dict], list[dict], list[dict], str, list[str]]:
             _enrich(a)
         return filtered
 
-    def _fetch_47():
-        raw = news_47.fetch()
-        filtered = disease_filter.filter_yahoo_articles(raw)
-        for a in filtered:
-            _enrich(a)
-        return filtered
-
     def _fetch_google():
         raw = google_news.fetch()
         filtered = disease_filter.filter_yahoo_articles(raw)
@@ -126,12 +119,11 @@ def _fetch_all() -> tuple[list[dict], list[dict], list[dict], str, list[str]]:
         "who_don": _fetch_who,
         "ecdc_cdtr": ecdc_cdtr.fetch,
         "yahoo_topics": _fetch_yahoo,
-        "news_47": _fetch_47,
         "google_news": _fetch_google,
     }
 
     results: dict[str, list[dict]] = {}
-    with ThreadPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {executor.submit(_fetch_with_fallback, name, fn): name for name, fn in tasks.items()}
         for future in as_completed(futures):
             name = futures[future]
@@ -142,7 +134,7 @@ def _fetch_all() -> tuple[list[dict], list[dict], list[dict], str, list[str]]:
 
     who_articles = results["who_don"]
     ecdc_reports = results["ecdc_cdtr"]
-    ja_combined = results["yahoo_topics"] + results["news_47"] + results["google_news"]
+    ja_combined = results["yahoo_topics"] + results["google_news"]
 
     ts = cache.save("who_don", who_articles)
     cache.save("ecdc_cdtr", ecdc_reports)
@@ -252,12 +244,11 @@ if "articles_who" not in st.session_state:
     who_cached, who_ts = cache.load("who_don")
     ecdc_cached, _ = cache.load("ecdc_cdtr")
     yahoo_cached, _ = cache.load("yahoo_topics")
-    n47_cached, _ = cache.load("news_47")
     gnews_cached, _ = cache.load("google_news")
     if who_cached:
         st.session_state.articles_who = who_cached
         st.session_state.articles_ecdc = ecdc_cached
-        st.session_state.articles_ja = (yahoo_cached or []) + (n47_cached or []) + (gnews_cached or [])
+        st.session_state.articles_ja = (yahoo_cached or []) + (gnews_cached or [])
         st.session_state.last_updated = who_ts
         st.session_state._using_mock = False
         st.session_state.fetch_warnings = []
@@ -480,13 +471,11 @@ if fetch_clicked:
             st.session_state.fetch_warnings = warns
             st.session_state.extraction_stats = _extraction_stats(who_a + ja_a)
             yahoo_count = sum(1 for a in ja_a if a.get("source") == "Yahoo Japan")
-            n47_count = sum(1 for a in ja_a if a.get("source") == "47NEWS")
             gnews_count = sum(1 for a in ja_a if a.get("source") == "Google ニュース")
             st.success(
                 f"{t('fetch_complete', lang)} — WHO DON: {len(who_a)} / "
                 f"ECDC CDTR: {len(ecdc_r)} / "
                 f"Yahoo: {yahoo_count} / "
-                f"47NEWS: {n47_count} / "
                 f"Google: {gnews_count}"
             )
             for w in warns:
@@ -498,13 +487,12 @@ if fetch_clicked:
                 cached_who, who_ts = cache.load("who_don")
                 cached_ecdc, _ = cache.load("ecdc_cdtr")
                 cached_yahoo, _ = cache.load("yahoo_topics")
-                cached_47, _ = cache.load("news_47")
                 cached_gnews, _ = cache.load("google_news")
                 if cached_who:
                     st.session_state.articles_who = cached_who
                     st.session_state.articles_ecdc = cached_ecdc
                     st.session_state.articles_ja = (
-                        (cached_yahoo or []) + (cached_47 or []) + (cached_gnews or [])
+                        (cached_yahoo or []) + (cached_gnews or [])
                     )
                     st.session_state.last_updated = who_ts
                     cache_msg = (
