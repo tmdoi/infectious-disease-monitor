@@ -121,6 +121,9 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 
 ## Changelog
 
+### 2026-05-31
+- Migrated deprecated `use_container_width` to the new `width` API (Streamlit)
+
 ### 2026-05-30 (latest)
 - Fixed avian influenza subtype labels (H5N1/H7N9/H9N2) being indistinguishable in English mode (subtype now shown first: "H5N1 Avian Influenza")
 

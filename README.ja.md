@@ -121,6 +121,9 @@ uv run streamlit run app.py
 
 ## 更新履歴
 
+### 2026-05-31
+- Streamlit の非推奨 `use_container_width` を新記法 `width` に移行(廃止対応)
+
 ### 2026-05-30(10回目)
 - 英語モードで鳥インフルエンザ亜型(H5N1/H7N9/H9N2)が区別できない問題を修正(型名を先頭に表示: "H5N1 Avian Influenza")
 

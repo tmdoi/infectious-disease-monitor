@@ -389,7 +389,7 @@ with st.sidebar:
         else:
             st.write(t("no_articles", lang))
 
-        if st.button(t("clear_selection", lang), use_container_width=True):
+        if st.button(t("clear_selection", lang), width='stretch'):
             st.session_state.selected_iso3 = None
             st.rerun()
 
@@ -440,7 +440,7 @@ for w in st.session_state.get("fetch_warnings", []):
 
 col_btn, col_status, col_lang = st.columns([1, 3, 1])
 with col_btn:
-    fetch_clicked = st.button(t("fetch_data", lang), type="primary", use_container_width=True)
+    fetch_clicked = st.button(t("fetch_data", lang), type="primary", width='stretch')
 with col_status:
     if st.session_state.last_updated:
         st.info(f"{t('last_updated', lang)}: {st.session_state.last_updated}")
@@ -537,7 +537,7 @@ if _all_map_articles or st.session_state.articles_who:
     if map_df.empty:
         st.info(t("no_disease_data", lang))
     else:
-        selected = st.plotly_chart(build(map_df, lang), use_container_width=True, on_select="rerun")
+        selected = st.plotly_chart(build(map_df, lang), width='stretch', on_select="rerun")
         if selected and selected.get("selection", {}).get("points"):
             clicked_iso3 = selected["selection"]["points"][0].get("location")
             if clicked_iso3 and clicked_iso3 != st.session_state.selected_iso3:
@@ -564,7 +564,7 @@ if _all_map_articles or st.session_state.articles_who:
     if display_articles:
         st.dataframe(
             pd.DataFrame(display_articles).sort_values(t("date_col", lang), ascending=False),
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
             column_config={"URL": st.column_config.LinkColumn(t("link", lang), display_text=t("open", lang))},
         )
@@ -585,7 +585,7 @@ if _all_map_articles or st.session_state.articles_who:
         ]
         st.dataframe(
             pd.DataFrame(ecdc_rows).sort_values(t("pub_date_col", lang), ascending=False),
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
             column_config={"URL": st.column_config.LinkColumn(t("link", lang), display_text=t("open", lang))},
         )
