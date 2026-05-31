@@ -105,7 +105,9 @@ def fetch() -> list[dict]:
                     "date": pub_date.strftime("%Y-%m-%d") if pub_date else "",
                     "source": "Google ニュース",
                     "publisher": publisher,
-                    "summary": clean_text(entry.get("summary", "")),
+                    # summary is HTML that duplicates the title; skip it to avoid
+                    # double-counting in country extraction (title alone is sufficient)
+                    "summary": "",
                 })
             return results, dropped
         except Exception as e:
