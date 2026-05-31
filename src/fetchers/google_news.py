@@ -10,6 +10,7 @@ from urllib.parse import quote
 
 import feedparser
 
+from src.fetchers import clean_rss_title
 from src.parsers import source_whitelist
 
 logger = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ def fetch() -> list[dict]:
                     continue
 
                 results.append({
-                    "title": entry.get("title", "").strip(),
+                    "title": clean_rss_title(entry.get("title", ""), strip_source_suffix=True),
                     "url": link,
                     "date": pub_date.strftime("%Y-%m-%d") if pub_date else "",
                     "source": "Google ニュース",

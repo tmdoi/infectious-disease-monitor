@@ -122,6 +122,7 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 ## Changelog
 
 ### 2026-05-31
+- Clean up HTML tags and source-name suffixes leaking into article titles (Google News, Yahoo, 47NEWS)
 - Migrated deprecated `use_container_width` to the new `width` API (Streamlit)
 
 ### 2026-05-30 (latest)

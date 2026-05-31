@@ -122,6 +122,7 @@ uv run streamlit run app.py
 ## 更新履歴
 
 ### 2026-05-31
+- Google ニュース等のタイトルに混入していたHTMLタグ・配信元名サフィックスを除去するクリーニングを追加
 - Streamlit の非推奨 `use_container_width` を新記法 `width` に移行(廃止対応)
 
 ### 2026-05-30(10回目)

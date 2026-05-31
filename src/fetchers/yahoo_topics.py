@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 
 import feedparser
 
+from src.fetchers import clean_rss_title
+
 logger = logging.getLogger(__name__)
 
 _RSS_URLS = [
@@ -31,7 +33,7 @@ def fetch() -> list[dict]:
                 if pub_date and pub_date < cutoff:
                     continue
                 articles.append({
-                    "title": entry.get("title", "").strip(),
+                    "title": clean_rss_title(entry.get("title", "")),
                     "url": link,
                     "date": pub_date.strftime("%Y-%m-%d") if pub_date else "",
                     "source": "Yahoo Japan",
