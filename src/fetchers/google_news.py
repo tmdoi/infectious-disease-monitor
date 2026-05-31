@@ -10,7 +10,7 @@ from urllib.parse import quote
 
 import feedparser
 
-from src.fetchers import clean_rss_title
+from src.fetchers import clean_text
 from src.parsers import source_whitelist
 
 logger = logging.getLogger(__name__)
@@ -100,12 +100,12 @@ def fetch() -> list[dict]:
                     continue
 
                 results.append({
-                    "title": clean_rss_title(entry.get("title", ""), strip_source_suffix=True),
+                    "title": clean_text(entry.get("title", ""), strip_source_suffix=True),
                     "url": link,
                     "date": pub_date.strftime("%Y-%m-%d") if pub_date else "",
                     "source": "Google ニュース",
                     "publisher": publisher,
-                    "summary": entry.get("summary", "").strip(),
+                    "summary": clean_text(entry.get("summary", "")),
                 })
             return results, dropped
         except Exception as e:

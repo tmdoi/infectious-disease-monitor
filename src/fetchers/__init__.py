@@ -3,25 +3,28 @@
 import html
 import re
 
-
-def strip_html(text: str) -> str:
-    """Remove HTML tags from *text* and return plain text."""
-    return re.sub(r"<[^>]+>", "", text).strip()
+from bs4 import BeautifulSoup
 
 
-def clean_rss_title(raw: str, strip_source_suffix: bool = False) -> str:
-    """Return a cleaned RSS article title.
+def clean_text(raw: str, strip_source_suffix: bool = False) -> str:
+    """Return cleaned plain text from a raw RSS title or summary field.
 
     Steps:
-    1. Decode HTML entities (&lt; → <, &amp; → &, etc.).
-    2. Truncate at the first '<' — everything from '<' onward is always junk.
-    3. If *strip_source_suffix* is True, remove trailing ' - Source Name'
-       (Google News format: always the *last* ' - ' segment).
+    1. Decode HTML entities (&lt; → <, &amp; → &, etc.)
+    2. Parse as HTML with BeautifulSoup and extract plain text
+       (handles both complete tags and fragments like unclosed <a href="...">)
+    3. Truncate at first '<' as a safety net for any unparsed fragment
+    4. If strip_source_suffix is True, remove trailing ' - Source Name'
+       (Google News format: always the last ' - ' segment)
     """
-    # Decode entities first so both '&lt;a' and literal '<a' are handled uniformly
     cleaned = html.unescape(raw)
-    # Cut at the first '<' — simpler and handles unclosed tags too
-    cleaned = cleaned.split("<")[0]
+    cleaned = BeautifulSoup(cleaned, "html.parser").get_text(separator=" ", strip=True)
+    if "<" in cleaned:
+        cleaned = cleaned.split("<")[0]
     if strip_source_suffix and " - " in cleaned:
         cleaned = cleaned.rsplit(" - ", 1)[0]
     return cleaned.strip()
+
+
+# Alias kept for any caller that still imports the old name
+clean_rss_title = clean_text

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import feedparser
 
-from src.fetchers import clean_rss_title
+from src.fetchers import clean_text
 
 logger = logging.getLogger(__name__)
 
@@ -33,11 +33,11 @@ def fetch() -> list[dict]:
                 if pub_date and pub_date < cutoff:
                     continue
                 articles.append({
-                    "title": clean_rss_title(entry.get("title", "")),
+                    "title": clean_text(entry.get("title", "")),
                     "url": link,
                     "date": pub_date.strftime("%Y-%m-%d") if pub_date else "",
                     "source": "Yahoo Japan",
-                    "summary": entry.get("summary", "").strip(),
+                    "summary": clean_text(entry.get("summary", "")),
                 })
         except Exception as e:
             logger.warning("Yahoo RSS fetch failed for %s: %s", url, e)

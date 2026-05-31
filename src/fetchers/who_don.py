@@ -10,6 +10,8 @@ from datetime import datetime, timedelta, timezone
 import requests
 from bs4 import BeautifulSoup
 
+from src.fetchers import clean_text
+
 logger = logging.getLogger(__name__)
 
 _API_URL = "https://www.who.int/api/emergencies/diseaseoutbreaknews"
@@ -61,8 +63,10 @@ def _from_api(cutoff: datetime) -> list[dict]:
                 pub_date = None
             if pub_date and pub_date < cutoff:
                 return articles  # API is sorted desc; stop here
-            title = (item["OverrideTitle"] if item.get("UseOverrideTitle") and item.get("OverrideTitle")
-                     else item.get("Title", "")).strip()
+            title = clean_text(
+                item["OverrideTitle"] if item.get("UseOverrideTitle") and item.get("OverrideTitle")
+                else item.get("Title", "")
+            )
             url_path = item.get("ItemDefaultUrl", "")
             url = _ITEM_BASE + url_path if url_path else ""
             articles.append({
@@ -86,7 +90,7 @@ def _from_html(cutoff: datetime) -> list[dict]:
         soup = BeautifulSoup(resp.text, "lxml")
         articles = []
         for a_tag in soup.select("a[href*='/emergencies/disease-outbreak-news/item/']"):
-            title = a_tag.get_text(strip=True)
+            title = clean_text(a_tag.get_text(strip=True))
             if not title:
                 continue
             href = a_tag.get("href", "")
