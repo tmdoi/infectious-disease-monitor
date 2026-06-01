@@ -120,6 +120,12 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 
 ## Changelog
 
+### 2026-06-01 (2)
+- Added Japan domestic place-name → JPN mapping (47 prefectures, 8 geographic regions, ~1,285 municipalities from a bundled JSON)
+- Articles mentioning Japanese place names (e.g. "Chitose bird flu … Hokkaido report") are now correctly classified as `scope="country"` with `iso3_list=["JPN"]` and appear on the world map
+- Collision guard: "中国地方" (Chūgoku region) is matched before "中国" (China), preventing false CHN mappings for western-Japan news
+- Blocklist prevents ambiguous 1–2-char names (directions, common nouns, ward names) from being registered as JPN aliases
+
 ### 2026-06-01
 - Articles with "Multi-country", "Multi-locations", "Worldwide", etc. in the title are now classified as `scope="broad"` instead of falling through to "unknown"
 - Sidebar "Regional / Unspecified News" section split into two subsections: "Broad-scope News" (multi-country / global) and "Location Unknown" (no geographic signal)

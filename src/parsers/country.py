@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -392,6 +393,90 @@ COUNTRY_ALIASES: dict[str, list[str]] = {
 }
 
 
+# ── Japan domestic place names → JPN ─────────────────────────────────────────
+
+# 短縮形として JPN に紐付けない語句（方角・一般名詞・区名など）
+_JPN_PLACE_BLOCKLIST: frozenset[str] = frozenset({
+    # 1文字
+    "津",
+    # 方角（単独では一般語）
+    "南", "北", "東", "西",
+    # 一般名詞と衝突しやすい語
+    "中央", "港", "緑", "花", "泉", "城", "宮", "野", "里",
+    "山", "川", "田", "森", "原", "池", "江", "浦", "谷", "坂",
+    "橋", "丘", "浜", "石", "金", "銀", "水", "松", "竹", "梅", "桜",
+    # 区名（単独では地名扱いしない）
+    "南区", "北区", "東区", "西区", "中央区", "港区", "緑区",
+})
+
+# Tier A: 都道府県・地方区分・政令指定都市略称（ハードコード）
+_JPN_TIER_A: list[str] = [
+    # ── 47 都道府県（正式名）
+    "北海道",
+    "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県",
+    "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県",
+    "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県",
+    "岐阜県", "静岡県", "愛知県",
+    "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県",
+    "鳥取県", "島根県", "岡山県", "広島県", "山口県",
+    "徳島県", "香川県", "愛媛県", "高知県",
+    "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県",
+    # ── 都道府県（略称 = 都/道/府/県 なし）
+    "青森", "岩手", "宮城", "秋田", "山形", "福島",
+    "茨城", "栃木", "群馬", "埼玉", "千葉", "東京", "神奈川",
+    "新潟", "富山", "石川", "福井", "山梨", "長野",
+    "岐阜", "静岡", "愛知",
+    "三重", "滋賀", "京都", "大阪", "兵庫", "奈良", "和歌山",
+    "鳥取", "島根", "岡山", "広島", "山口",
+    "徳島", "香川", "愛媛", "高知",
+    "福岡", "佐賀", "長崎", "熊本", "大分", "宮崎", "鹿児島", "沖縄",
+    # ── 地方区分
+    # 「中国地方」を登録し「中国」(2文字=CHN) よりも長い別名を優先させる
+    "北海道地方",
+    "東北地方",           # 「東北」単独は「東北アジア」と混同するため 地方 付きのみ
+    "関東地方", "関東",
+    "甲信越地方", "甲信越",
+    "北陸地方", "北陸",
+    "東海地方", "東海",
+    "近畿地方", "近畿", "関西",
+    "中国地方", "中四国地方", "中四国",  # CHN 誤検出ガード
+    "四国地方", "四国",
+    "九州地方", "九州",
+    "南西諸島", "琉球",
+    # ── 政令指定都市・主要都市（略称）
+    "札幌", "仙台", "横浜", "川崎", "浜松", "名古屋", "神戸",
+    "岡山", "広島", "福岡", "熊本",
+    "函館", "旭川", "小樽", "釧路", "帯広", "網走", "稚内", "千歳",
+    "盛岡", "石巻", "郡山", "会津若松",
+    "水戸", "宇都宮", "高崎", "横須賀", "藤沢",
+    "金沢", "長野", "松本",
+    "宇治", "奈良", "和歌山",
+    "鳥取", "松江", "倉敷", "福山", "下関",
+    "高松", "松山", "高知",
+    "久留米", "佐世保", "別府", "宮崎", "鹿児島", "那覇",
+]
+
+
+def _load_jpn_tier_b() -> list[str]:
+    """Load municipality names from the bundled JSON data file."""
+    try:
+        data_file = Path(__file__).parents[1] / "data" / "japan_municipalities.json"
+        names = json.loads(data_file.read_text(encoding="utf-8"))
+        return names if isinstance(names, list) else []
+    except Exception:
+        return []
+
+
+def _jpn_short_form(name: str) -> str | None:
+    """Return the base name without 市/町/村/区 suffix if safe to use as a JPN alias."""
+    for suffix in ("市", "町", "村", "区"):
+        if name.endswith(suffix):
+            base = name[: -len(suffix)]
+            if len(base) >= 2 and base not in _JPN_PLACE_BLOCKLIST:
+                return base
+    return None
+
+
 # ── Region keywords (broad geographic terms, not specific countries) ──────────
 
 _REGION_KEYWORDS: list[tuple[str, str]] = sorted([
@@ -444,6 +529,21 @@ for _iso3, _aliases in COUNTRY_ALIASES.items():
         if len(_alias) == 1 and any(0x3000 <= ord(c) <= 0x9FFF for c in _alias):
             continue
         _alias_to_iso3[_alias] = _iso3
+
+# ── Japan place names (Tier A inline + Tier B from JSON) → JPN ───────────────
+# Uses `if not in` to avoid overriding any explicitly registered foreign country.
+# 「中国地方」(5 chars) is longer than 「中国」(2 chars=CHN), so longest-match-first
+# ensures correct disambiguation when both appear in the alias list.
+_jpn_all: list[str] = _JPN_TIER_A + _load_jpn_tier_b()
+for _jp in _jpn_all:
+    if _jp in _JPN_PLACE_BLOCKLIST:
+        continue
+    if _jp not in _alias_to_iso3:
+        _alias_to_iso3[_jp] = "JPN"
+    # Also register the short form (without 市/町/村/区) where unambiguous
+    _sf = _jpn_short_form(_jp)
+    if _sf and _sf not in _alias_to_iso3:
+        _alias_to_iso3[_sf] = "JPN"
 
 # Sort by alias length descending for longest-match-first disambiguation
 _SORTED_ALIASES: list[tuple[str, str]] = sorted(
