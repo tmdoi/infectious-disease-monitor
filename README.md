@@ -2,6 +2,8 @@ English | [日本語](README.ja.md)
 
 # Emerging Infectious Disease Global Monitoring Dashboard
 
+**Status**: Stable / in operation (v1.0). Core features are complete; active feature development is paused. Maintenance only (data-source upkeep and bug fixes) going forward.
+
 A Streamlit application that visualizes WHO / ECDC outbreak information and Japanese news in real time on an interactive world choropleth map.
 
 ![screenshot](docs/screenshot-en.png)
@@ -119,6 +121,9 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 [MIT](LICENSE)
 
 ## Changelog
+
+### 2026-06-01 (3)
+- Marked project as v1.0 (stable / in operation); added status line below the title
 
 ### 2026-06-01 (2)
 - Added Japan domestic place-name → JPN mapping (47 prefectures, 8 geographic regions, ~1,285 municipalities from a bundled JSON)
