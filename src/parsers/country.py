@@ -400,9 +400,16 @@ _REGION_KEYWORDS: list[tuple[str, str]] = sorted([
     ("Asia Pacific", "アジア太平洋"),
     ("Latin America", "中南米"),
     ("Middle East", "中東"),
+    ("Multiple countries", "複数国"),
+    ("Multiple locations", "複数地域"),
+    ("Multi-locations", "複数地域"),
+    ("Multi-location", "複数地域"),
     ("Multi-country", "複数国"),
+    ("Multi country", "複数国"),
     ("multiple countries", "複数国"),
     ("several countries", "複数国"),
+    ("Multinational", "複数国"),
+    ("International", "国際"),
     ("Worldwide", "世界"),
     ("Globally", "世界"),
     ("Global", "世界"),
@@ -493,6 +500,8 @@ def extract_countries(text: str) -> list[str]:
     preview = text[:100].replace("\n", " ")
     if result:
         logger.debug("countries=%s from %r", result, preview)
+    elif is_broad_scope(text):
+        logger.info("broad scope detected (no specific countries) in %r", preview)
     else:
         logger.warning("no countries found in %r", preview)
 
@@ -506,6 +515,11 @@ def detect_region(text: str) -> str | None:
         if kw.lower() in text_lower:
             return label
     return None
+
+
+def is_broad_scope(text: str) -> bool:
+    """Return True if text contains a broad geographic or multi-country scope marker."""
+    return detect_region(text) is not None
 
 
 # ── Backward-compat wrappers ───────────────────────────────────────────────────

@@ -120,6 +120,11 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 
 ## Changelog
 
+### 2026-06-01
+- Articles with "Multi-country", "Multi-locations", "Worldwide", etc. in the title are now classified as `scope="broad"` instead of falling through to "unknown"
+- Sidebar "Regional / Unspecified News" section split into two subsections: "Broad-scope News" (multi-country / global) and "Location Unknown" (no geographic signal)
+- Suppressed false-positive `WARNING no countries found` for broad-scope articles; replaced with `INFO broad scope detected`
+
 ### 2026-05-31
 - Removed the non-functional standalone 47NEWS fetcher (47NEWS articles are still collected via Google News); updated data source description accordingly
 - Clean up HTML tags and source-name suffixes leaking into article titles (Google News, Yahoo, 47NEWS)

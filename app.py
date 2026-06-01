@@ -74,11 +74,16 @@ def _fetch_with_fallback(name: str, fn) -> tuple[list[dict], str | None]:
 
 
 def _enrich(a: dict) -> dict:
-    """Add iso3_list (and region for no-match) to an article dict in-place."""
+    """Add iso3_list, scope (country/broad/unknown), and region to an article dict in-place."""
     text = (a.get("title", "") + " " + a.get("summary", "")).strip()
-    a["iso3_list"] = country_parser.extract_countries(text)
-    if not a["iso3_list"]:
-        a["region"] = country_parser.detect_region(text)
+    iso3s = country_parser.extract_countries(text)
+    a["iso3_list"] = iso3s
+    if iso3s:
+        a["scope"] = "country"
+    else:
+        region = country_parser.detect_region(text)
+        a["region"] = region
+        a["scope"] = "broad" if region else "unknown"
     return a
 
 
@@ -389,24 +394,53 @@ with st.sidebar:
     _all_for_broad = (
         st.session_state.get("articles_who", []) + st.session_state.get("articles_ja", [])
     )
-    _broad_articles = [
+    _no_country_articles = [
         a for a in _all_for_broad
         if not a.get("iso3_list") and a.get("disease_ja") in selected_ja_names
     ]
-    if _broad_articles:
-        count_suffix = f"({len(_broad_articles)}{'件' if lang == 'ja' else ''})"
-        st.header(f"🌍 {t('regional_news', lang)} {count_suffix}")
-        for a in sorted(_broad_articles, key=lambda x: x.get("date", ""), reverse=True):
-            label = _display_label(a, lang)
-            region = a.get("region")
-            region_tag = f" [{region}]" if region else f" [{t('region_unknown', lang)}]"
-            title_display = _tr(a["title"], lang)
-            st.markdown(
-                f'<a href="{a["url"]}" target="_blank">{title_display}</a>'
-                f'<br><small>{a.get("date", t("date_unknown", lang))} {label}{region_tag}'
-                f' — {disease_ja_to_display(a.get("disease_ja", ""), lang)}</small><br>',
-                unsafe_allow_html=True,
+    _broad_scope_articles = [a for a in _no_country_articles if a.get("scope") == "broad"]
+    _unknown_scope_articles = [a for a in _no_country_articles if a.get("scope") != "broad"]
+
+    if _no_country_articles:
+        total_suffix = f"({len(_no_country_articles)}{'件' if lang == 'ja' else ''})"
+        st.header(f"🌍 {t('regional_news', lang)} {total_suffix}")
+
+        if _broad_scope_articles:
+            broad_subhead = (
+                f"🌐 広域ニュース ({len(_broad_scope_articles)}件)"
+                if lang == "ja"
+                else f"🌐 Broad-scope News ({len(_broad_scope_articles)})"
             )
+            st.subheader(broad_subhead)
+            for a in sorted(_broad_scope_articles, key=lambda x: x.get("date", ""), reverse=True):
+                label = _display_label(a, lang)
+                region = a.get("region")
+                region_tag = f" [{region}]" if region else ""
+                title_display = _tr(a["title"], lang)
+                st.markdown(
+                    f'<a href="{a["url"]}" target="_blank">{title_display}</a>'
+                    f'<br><small>{a.get("date", t("date_unknown", lang))} {label}{region_tag}'
+                    f' — {disease_ja_to_display(a.get("disease_ja", ""), lang)}</small><br>',
+                    unsafe_allow_html=True,
+                )
+
+        if _unknown_scope_articles:
+            unknown_subhead = (
+                f"❓ 地域不明ニュース ({len(_unknown_scope_articles)}件)"
+                if lang == "ja"
+                else f"❓ Location Unknown ({len(_unknown_scope_articles)})"
+            )
+            st.subheader(unknown_subhead)
+            for a in sorted(_unknown_scope_articles, key=lambda x: x.get("date", ""), reverse=True):
+                label = _display_label(a, lang)
+                title_display = _tr(a["title"], lang)
+                st.markdown(
+                    f'<a href="{a["url"]}" target="_blank">{title_display}</a>'
+                    f'<br><small>{a.get("date", t("date_unknown", lang))} {label}'
+                    f' [{t("region_unknown", lang)}]'
+                    f' — {disease_ja_to_display(a.get("disease_ja", ""), lang)}</small><br>',
+                    unsafe_allow_html=True,
+                )
 
     # ── About / How to Use ────────────────────────────────────────────────────
     st.divider()

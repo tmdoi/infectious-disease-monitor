@@ -120,6 +120,11 @@ uv run streamlit run app.py
 
 ## 更新履歴
 
+### 2026-06-01
+- "Multi-country", "Multi-locations", "Worldwide" 等を含む記事を `scope="broad"` (広域) に正しく分類するよう改善
+- サイドバーの広域・地域不明セクションを「広域ニュース」(複数国・国際) と「地域不明ニュース」(地理的シグナルなし) の2サブセクションに分割
+- 広域記事に対する `WARNING no countries found` を `INFO broad scope detected` に変更し、誤警告を抑制
+
 ### 2026-05-31
 - 動作していない 47NEWS 独立フェッチャーを削除(47NEWS の記事は Google ニュース経由で取得継続)。データソースの記述を実態に合わせて整理
 - Google ニュース等のタイトルに混入していたHTMLタグ・配信元名サフィックスを除去するクリーニングを追加
