@@ -26,6 +26,7 @@ DISEASE_ENTRIES: list[dict[str, str]] = [
     {"id": "chikungunya",  "ja": "チクングニア熱",         "en": "Chikungunya"},
     {"id": "cchf",         "ja": "クリミア・コンゴ出血熱", "en": "Crimean-Congo Hemorrhagic Fever"},
     {"id": "measles",      "ja": "麻疹",                 "en": "Measles"},
+    {"id": "cyclospora",   "ja": "サイクロスポラ症",       "en": "Cyclosporiasis"},
 ]
 
 # Derived lookup tables

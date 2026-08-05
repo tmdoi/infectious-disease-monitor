@@ -12,7 +12,7 @@ A Streamlit application that visualizes WHO / ECDC outbreak information and Japa
 
 - **5 data sources** integrated in parallel: WHO DON, ECDC CDTR, Yahoo News Japan, Google News, NHK (Google News aggregates 47NEWS, major dailies, wire services)
 - **Interactive world map** — click any country to see related articles in the sidebar
-- **Disease filter** — 18 diseases including Ebola, Measles, Dengue, Hantavirus, Mpox and more
+- **Disease filter** — 19 diseases including Ebola, Measles, Dengue, Hantavirus, Mpox, Cyclosporiasis and more
 - **Source whitelist** — public broadcasters, national newspapers, wire services and government bodies only
 - **Country extraction** — alias dictionary (80+ countries), multi-country articles, regional/unspecified fallback
 - **Bilingual UI** — Japanese / English toggle; article titles translated locally via argos-translate (no API key needed)
@@ -121,6 +121,12 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 [MIT](LICENSE)
 
 ## Changelog
+
+### 2026-08-05
+- Added Cyclosporiasis as the 19th monitored disease (EN keywords: Cyclospora / Cyclosporiasis / Cyclospora cayetanensis, JA: サイクロスポラ); registered in the glossary and translator, plus JA/EN Google News queries
+- Added US state names (50 states + District of Columbia) → USA mapping. Ambiguous names require an explicit state marker ("Washington state", "Georgia, US", 「ジョージア州」); Japanese names match only with the 「〜州」 suffix; two-letter abbreviations are not used
+- Added Japanese ministry / institution / law / university markers (厚労省, 国立感染症研究所, 感染症法, 東大・阪大 …) → JPN, so domestic articles without a place name are no longer "unknown"
+- Both mappings run only as a fallback after country-name matching, so "中国の厚生当局" stays CHN and "New Mexico" no longer resolves to Mexico
 
 ### 2026-06-01 (3)
 - Marked project as v1.0 (stable / in operation); added status line below the title

@@ -22,6 +22,10 @@ DISEASE_KEYWORDS: dict[str, str] = {
     "Chikungunya": "チクングニア熱",
     "Crimean-Congo": "クリミア・コンゴ出血熱",
     "Measles": "麻疹",
+    # "Cyclosporiasis" does not contain the substring "Cyclospora", so both are needed.
+    "Cyclospora cayetanensis": "サイクロスポラ症",
+    "Cyclosporiasis": "サイクロスポラ症",
+    "Cyclospora": "サイクロスポラ症",
 }
 
 # De-duplicated list of Japanese names for UI multiselect
@@ -68,6 +72,8 @@ DISEASE_KEYWORDS_JA: dict[str, str] = {
     "チクングニア": "チクングニア熱",
     "クリミア・コンゴ": "クリミア・コンゴ出血熱",
     "麻疹": "麻疹",
+    "サイクロスポラ症": "サイクロスポラ症",
+    "サイクロスポラ": "サイクロスポラ症",
 }
 
 # General epidemic terms: only produce "未分類" when no specific keyword matches.

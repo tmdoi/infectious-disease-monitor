@@ -477,6 +477,81 @@ def _jpn_short_form(name: str) -> str | None:
     return None
 
 
+# ── Japan organization / institution markers → JPN ───────────────────────────
+
+# 記事に地名が無くても「日本国内の話題」と判断できる語（省庁・制度・研究機関）。
+# 国名照合の後に評価されるため、「中国の厚生当局」等では国名側が優先される。
+_JPN_ORG_MARKERS: list[str] = [
+    # 省庁・国の機関
+    "厚生労働省", "厚労省", "農林水産省", "農水省",
+    "国立感染症研究所", "感染研", "国立健康危機管理研究機構",
+    "国立国際医療研究センター",
+    # 制度・法令用語
+    "1類感染症", "一類感染症", "検疫法", "感染症法", "指定感染症",
+    # 感染症研究の報道に登場する主要大学（略称はホワイトリスト方式）
+    "東京大学", "東大", "大阪大学", "阪大", "京都大学", "京大",
+    "北海道大学", "北大", "東北大学", "九州大学", "九大", "長崎大学",
+]
+
+# 2文字略称が別語の一部として現れる誤検出を打ち消す（「北大西洋」の「北大」など）
+_JPN_ORG_EXCLUDE: tuple[str, ...] = ("北大西洋",)
+
+
+def _match_japan_org(text: str) -> bool:
+    """Return True if text mentions a Japanese ministry, institution, law, or university."""
+    cleaned = text
+    for phrase in _JPN_ORG_EXCLUDE:
+        cleaned = cleaned.replace(phrase, "\x00" * len(phrase))
+    return any(marker in cleaned for marker in _JPN_ORG_MARKERS)
+
+
+# ── US state names → USA ─────────────────────────────────────────────────────
+
+# 単独で USA と判定してよい州名（英語）。2文字略号(MI/OH…)は誤検出が多いため不採用。
+# Georgia(国名と衝突) / Washington(首都・人名と衝突) / Virginia(人名と衝突) は
+# 下の _US_STATES_STRICT_EN で「州」が明示された場合のみ扱う。
+_US_STATES_EN: list[str] = [
+    "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+    "Connecticut", "Delaware", "Florida", "Hawaii", "Idaho", "Illinois",
+    "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland",
+    "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri",
+    "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey",
+    "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio",
+    "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina",
+    "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "West Virginia",
+    "Wisconsin", "Wyoming",
+    "District of Columbia", "Washington, D.C.", "Washington D.C.", "Washington DC",
+]
+
+# 「州」であることが明示された場合のみ USA とみなす曖昧な州名（英語・大文字小文字無視）
+_US_STATES_STRICT_EN: list[str] = [
+    "Georgia, US", "Georgia, U.S.", "Georgia, USA", "Georgia, United States",
+    "Georgia State", "State of Georgia",
+    "Washington State", "State of Washington",
+    "Virginia, US", "Virginia, USA", "Virginia State", "State of Virginia",
+]
+
+# 日本語表記は「〜州」の接尾辞を伴う場合のみ照合する（ジョージア/ワシントン対策）
+_US_STATES_JA: list[str] = [
+    "アラバマ州", "アラスカ州", "アリゾナ州", "アーカンソー州", "カリフォルニア州",
+    "コロラド州", "コネチカット州", "デラウェア州", "フロリダ州", "ジョージア州",
+    "ハワイ州", "アイダホ州", "イリノイ州", "インディアナ州", "アイオワ州",
+    "カンザス州", "ケンタッキー州", "ルイジアナ州", "メイン州", "メリーランド州",
+    "マサチューセッツ州", "ミシガン州", "ミネソタ州", "ミシシッピ州", "ミズーリ州",
+    "モンタナ州", "ネブラスカ州", "ネバダ州", "ニューハンプシャー州",
+    "ニュージャージー州", "ニューメキシコ州", "ニューヨーク州",
+    "ノースカロライナ州", "ノースダコタ州", "オハイオ州", "オクラホマ州",
+    "オレゴン州", "ペンシルベニア州", "ペンシルバニア州", "ロードアイランド州",
+    "サウスカロライナ州", "サウスダコタ州", "テネシー州", "テキサス州", "ユタ州",
+    "バーモント州", "バージニア州", "ヴァージニア州", "ワシントン州",
+    "ウェストバージニア州", "ウェストヴァージニア州", "ウィスコンシン州",
+    "ワイオミング州",
+    "ワシントンD.C.", "ワシントンDC", "コロンビア特別区",
+]
+
+_US_STATE_ALIASES: list[str] = _US_STATES_JA + _US_STATES_STRICT_EN + _US_STATES_EN
+
+
 # ── Region keywords (broad geographic terms, not specific countries) ──────────
 
 _REGION_KEYWORDS: list[tuple[str, str]] = sorted([
@@ -545,6 +620,12 @@ for _jp in _jpn_all:
     if _sf and _sf not in _alias_to_iso3:
         _alias_to_iso3[_sf] = "JPN"
 
+# 州名が国名を内包するケースだけは国名照合フェーズで先に解決させる。
+# 「New Mexico」(10 chars) は「Mexico」(6 chars) より長いため longest-match-first で
+# MEX への誤検出を防げる。
+_alias_to_iso3["New Mexico"] = "USA"
+_alias_to_iso3["ニューメキシコ州"] = "USA"
+
 # Sort by alias length descending for longest-match-first disambiguation
 _SORTED_ALIASES: list[tuple[str, str]] = sorted(
     _alias_to_iso3.items(),
@@ -570,12 +651,29 @@ def _match_pos(text: str, alias: str) -> int:
     return m.start() if m else -1
 
 
+def _match_us_state(text: str) -> bool:
+    """Return True if text mentions a US state (Japanese 「〜州」 or unambiguous English name)."""
+    return any(_match_pos(text, alias) >= 0 for alias in _US_STATE_ALIASES)
+
+
+def _fallback_iso3(text: str) -> tuple[str, str] | None:
+    """Return (iso3, reason) from domestic markers when no country name matched."""
+    if _match_japan_org(text):
+        return "JPN", "japan-org"
+    if _match_us_state(text):
+        return "USA", "us-state"
+    return None
+
+
 def extract_countries(text: str) -> list[str]:
     """Extract ISO3 codes for all countries mentioned in text, in order of appearance.
 
     Scans title + description/summary combined text. Uses longest-match-first to
     resolve ambiguous sub-strings (e.g. 'コンゴ民主共和国' before 'コンゴ').
     Matched spans are blanked to prevent shorter aliases from overlapping.
+
+    When no country name matches, falls back to domestic markers: Japanese
+    ministries/institutions → JPN, then US state names → USA.
     """
     if not text.strip():
         return []
@@ -598,6 +696,14 @@ def extract_countries(text: str) -> list[str]:
     result = [iso3 for _, iso3 in matches]
 
     preview = text[:100].replace("\n", " ")
+
+    if not result:
+        fallback = _fallback_iso3(text)
+        if fallback:
+            iso3, reason = fallback
+            logger.debug("countries=['%s'] via %s marker in %r", iso3, reason, preview)
+            return [iso3]
+
     if result:
         logger.debug("countries=%s from %r", result, preview)
     elif is_broad_scope(text):

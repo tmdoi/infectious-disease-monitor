@@ -26,6 +26,9 @@ _models_ready: bool | None = None
 _DISEASE_EN_JA: list[tuple[str, str]] = sorted([
     ("Crimean-Congo hemorrhagic fever", "クリミア・コンゴ出血熱"),
     ("Crimean-Congo", "クリミア・コンゴ出血熱"),
+    ("Cyclospora cayetanensis", "サイクロスポラ症"),
+    ("Cyclosporiasis", "サイクロスポラ症"),
+    ("Cyclospora", "サイクロスポラ症"),
     ("Avian influenza", "鳥インフルエンザ"),
     ("Ebola virus disease", "エボラウイルス病"),
     ("Yellow fever", "黄熱"),
@@ -72,6 +75,7 @@ _DISEASE_JA_EN: list[tuple[str, str]] = sorted([
     ("黄熱", "Yellow Fever"),
     ("ジカ熱", "Zika Fever"),
     ("麻疹", "Measles"),
+    ("サイクロスポラ症", "Cyclosporiasis"),
 ], key=lambda x: len(x[0]), reverse=True)
 
 # Post-processing normalization for JA→EN output (normalize model's English output)
@@ -92,6 +96,7 @@ _EN_NORMALIZE: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bavian influenza\b", re.IGNORECASE), "Avian Influenza"),
     (re.compile(r"\b(h5n1|h7n9|h9n2)\b", re.IGNORECASE), lambda m: m.group(0).upper()),
     (re.compile(r"\bmers\b", re.IGNORECASE), "MERS"),
+    (re.compile(r"\bcyclospor(?:a|iasis)\b", re.IGNORECASE), "Cyclosporiasis"),
 ]
 
 

@@ -74,8 +74,8 @@ _LABELS: dict[str, dict[str, str]] = {
 - 📰 Yahoo Japan / 🔍 Google ニュース (47NEWS・全国紙・通信社を含む)
 - 公共放送・全国紙・通信社・公的機関のみ配信
 
-**対象疾患** (18疾患)
-エボラ出血熱、マールブルグ病、鳥インフルエンザ、MERS-CoV、ラッサ熱、デング熱、ジカ熱、ハンタウイルス、ニパウイルス、エムポックス、コレラ、黄熱、チクングニア熱、クリミア・コンゴ出血熱、麻疹 など
+**対象疾患** (19疾患)
+エボラ出血熱、マールブルグ病、鳥インフルエンザ、MERS-CoV、ラッサ熱、デング熱、ジカ熱、ハンタウイルス、ニパウイルス、エムポックス、コレラ、黄熱、チクングニア熱、クリミア・コンゴ出血熱、麻疹、サイクロスポラ症 など
 
 **免責事項**
 - 本ツールは情報集約が目的であり、医学的・公衆衛生上の判断の根拠とすべきではありません
@@ -168,8 +168,8 @@ _LABELS: dict[str, dict[str, str]] = {
 - 📰 Yahoo Japan / 🔍 Google News (incl. 47NEWS, major dailies, wire services)
 - Trusted sources only: public broadcasters, national newspapers, wire services, government bodies
 
-**Diseases Monitored** (18 diseases)
-Ebola, Marburg, Avian Influenza, MERS-CoV, Lassa Fever, Dengue, Zika, Hantavirus, Nipah, Mpox, Cholera, Yellow Fever, Chikungunya, Crimean-Congo Hemorrhagic Fever, Measles, and more
+**Diseases Monitored** (19 diseases)
+Ebola, Marburg, Avian Influenza, MERS-CoV, Lassa Fever, Dengue, Zika, Hantavirus, Nipah, Mpox, Cholera, Yellow Fever, Chikungunya, Crimean-Congo Hemorrhagic Fever, Measles, Cyclosporiasis, and more
 
 **Disclaimer**
 - This tool is for **information aggregation only** and must not be used as a basis for medical or public health decisions
