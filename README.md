@@ -2,7 +2,7 @@ English | [日本語](README.ja.md)
 
 # Emerging Infectious Disease Global Monitoring Dashboard
 
-**Status**: Stable / in operation (v1.0). Core features are complete; active feature development is paused. Maintenance only (data-source upkeep and bug fixes) going forward.
+**Status**: Stable / in operation (v1.1). Core features are complete; active feature development is paused. Maintenance only (data-source upkeep and bug fixes) going forward.
 
 A Streamlit application that visualizes WHO / ECDC outbreak information and Japanese news in real time on an interactive world choropleth map.
 
@@ -12,9 +12,15 @@ A Streamlit application that visualizes WHO / ECDC outbreak information and Japa
 
 - **5 data sources** integrated in parallel: WHO DON, ECDC CDTR, Yahoo News Japan, Google News, NHK (Google News aggregates 47NEWS, major dailies, wire services)
 - **Interactive world map** — click any country to see related articles in the sidebar
-- **Disease filter** — 19 diseases including Ebola, Measles, Dengue, Hantavirus, Mpox, Cyclosporiasis and more
+- **Disease filter** — 16 diseases including Ebola, Measles, Dengue, Hantavirus, Mpox and Cyclosporiasis (added in v1.1). The filter lists 19 options because avian influenza is broken out by subtype (H5N1 / H7N9 / H9N2 / unspecified)
 - **Source whitelist** — public broadcasters, national newspapers, wire services and government bodies only
-- **Country extraction** — alias dictionary (80+ countries), multi-country articles, regional/unspecified fallback
+- **Country extraction** — country/place name → ISO3 via an alias dictionary (80+ countries), with multi-country articles and a regional/unspecified fallback. Additional matchers, applied in order after country-name matching:
+  - Japanese place names (47 prefectures, ~1,285 municipalities) → JPN
+  - Japanese institution names (ministries, universities, legal/administrative terms) → JPN
+  - US state names → USA, with false-positive guards (ambiguous names require an explicit state marker)
+  - Abbreviated country names (「米国」「米で」 etc.), matched only in tightly restricted patterns
+  - Broad-scope markers (Multi-country / Multi-locations / Global / Africa …) → `scope="broad"`
+  - Per-disease default country inference (provisional — currently Cyclosporiasis → USA only). Inferred rows are labelled "(inferred)" in the article table so they stay distinguishable from confirmed matches. See [Country Inference](#country-inference-provisional-setting)
 - **Bilingual UI** — Japanese / English toggle; article titles translated locally via argos-translate (no API key needed)
 
 ## Data Sources
@@ -120,6 +126,22 @@ Such articles are marked "(inferred)" in the UI and logged at INFO level.
 > delete the entry once the outbreak subsides — `DISEASE_DEFAULT_COUNTRY` is the only
 > place that needs editing.
 
+## Known Limitations
+
+- **Per-disease default countries are a provisional setting** that depends on the current
+  outbreak situation. If the affected region shifts, the inference becomes wrong. The whole
+  mapping lives in `DISEASE_DEFAULT_COUNTRY` in `src/data/disease_defaults.py` — edit or
+  delete entries there (key: Japanese disease name, value: ISO3 code); no other file needs
+  to change. See [Country Inference](#country-inference-provisional-setting).
+- Articles whose title contains no country name, place name, or broad-scope marker fall
+  through to "Location Unknown".
+- The Yahoo News fetcher currently returns 0 articles (under investigation). Coverage is
+  unaffected in practice, since the same stories arrive via the other sources.
+- Translation runs locally through argos-translate, so translated titles are sometimes
+  awkward or literal.
+- Install with `uv sync --extra translation` on Apple Silicon; on Intel Macs use plain
+  `uv sync` (translation is unavailable — see [Supported Platforms](#supported-platforms)).
+
 ## Disclaimer
 
 - This tool is intended for **information aggregation only** and must not be used as the basis for medical or public health decisions.
@@ -136,6 +158,17 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 [MIT](LICENSE)
 
 ## Changelog
+
+### 2026-08-05 (4) — v1.1
+- Marked the project as v1.1; updated the status line and the feature list
+- This release, in summary (see the three entries below for details):
+  - Added Cyclosporiasis as a monitored disease (16 diseases total) — a large lettuce-borne outbreak is ongoing in the United States in summer 2026
+  - Added US state → USA and Japanese place-name / institution-name → JPN mappings
+  - Added detection of abbreviated country names (「米で」「米国」 etc.)
+  - Strip photo credits (`/Getty Images/File` etc.) leaking into article titles
+  - Introduced per-disease default-country inference; inferred rows are labelled "(inferred)" in the table
+  - Suppressed the spurious `WARNING` on successful inference and unified the inference logger
+- Added a "Known Limitations" section
 
 ### 2026-08-05 (3)
 - Suppressed the misleading `WARNING no countries found` for articles that are subsequently resolved by a per-disease default country (`extract_countries()` now takes `log_unmatched`)
