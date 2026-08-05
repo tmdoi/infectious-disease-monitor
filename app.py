@@ -8,9 +8,11 @@ import pandas as pd
 import streamlit as st
 
 from src import cache, translator
+from src.data import disease_defaults
 from src.data.glossary import (
     ALL_DISEASE_IDS,
     disease_display_name,
+    disease_id_from_ja,
     disease_ja_to_display,
     ja_name_from_id,
 )
@@ -74,24 +76,45 @@ def _fetch_with_fallback(name: str, fn) -> tuple[list[dict], str | None]:
 
 
 def _enrich(a: dict) -> dict:
-    """Add iso3_list, scope (country/broad/unknown), and region to an article dict in-place."""
+    """Add iso3_list, scope (country/broad/unknown), region, and inferred to an article dict."""
     text = (a.get("title", "") + " " + a.get("summary", "")).strip()
     iso3s = country_parser.extract_countries(text)
     a["iso3_list"] = iso3s
+    a["inferred"] = False
     if iso3s:
         a["scope"] = "country"
-    else:
-        region = country_parser.detect_region(text)
-        a["region"] = region
-        a["scope"] = "broad" if region else "unknown"
+        return a
+
+    region = country_parser.detect_region(text)
+    a["region"] = region
+    if region:
+        a["scope"] = "broad"
+        return a
+
+    # 地域不明の記事だけ、疾患ごとの既定国（暫定設定）で推定する
+    default_iso3 = disease_defaults.default_country(a.get("disease_ja", ""))
+    if default_iso3:
+        a["iso3_list"] = [default_iso3]
+        a["scope"] = "country"
+        a["inferred"] = True
+        logging.info(
+            "inferred country %s from disease default (%s) in %r",
+            default_iso3,
+            disease_id_from_ja(a.get("disease_ja", "")) or a.get("disease_ja", ""),
+            text[:100],
+        )
+        return a
+
+    a["scope"] = "unknown"
     return a
 
 
 def _extraction_stats(articles: list[dict]) -> dict[str, int]:
     total = len(articles)
     success = sum(1 for a in articles if a.get("iso3_list"))
+    inferred = sum(1 for a in articles if a.get("inferred"))
     broad = sum(1 for a in articles if not a.get("iso3_list") and a.get("region"))
-    return {"total": total, "success": success, "broad": broad,
+    return {"total": total, "success": success, "inferred": inferred, "broad": broad,
             "unknown": total - success - broad}
 
 
@@ -214,11 +237,17 @@ def _tr(title: str, lang: str) -> str:
     return translator.translate(title, lang)
 
 
+def _inferred_mark(a: dict, lang: str) -> str:
+    """Return a '(推定)' / '(inferred)' suffix for articles whose country was guessed."""
+    return f" ({t('inferred', lang)})" if a.get("inferred") else ""
+
+
 def _country_cell(a: dict, lang: str) -> str:
     """Return display string for a country cell in the article table."""
     iso3s = a.get("iso3_list", [])
     if iso3s:
-        return ", ".join(country_parser.get_country_name(c, lang) for c in iso3s)
+        names = ", ".join(country_parser.get_country_name(c, lang) for c in iso3s)
+        return names + _inferred_mark(a, lang)
     region = a.get("region")
     return f"[{region}]" if region else t("region_unknown", lang)
 
@@ -379,7 +408,8 @@ with st.sidebar:
                 st.markdown(
                     f'<a href="{a["url"]}" target="_blank">{title_display}</a>'
                     f'<br><small>{a.get("date", t("date_unknown", lang))} {label}{multi_tag}'
-                    f' — {disease_ja_to_display(a.get("disease_ja", ""), lang)}</small><br>',
+                    f' — {disease_ja_to_display(a.get("disease_ja", ""), lang)}'
+                    f'{_inferred_mark(a, lang)}</small><br>',
                     unsafe_allow_html=True,
                 )
         else:
@@ -486,9 +516,12 @@ with col_lang:
 
 _stats = st.session_state.get("extraction_stats")
 if _stats and _stats["total"] > 0:
+    _inferred_note = ""
+    if _stats.get("inferred"):
+        _inferred_note = f" ({t('inferred', lang)} {_stats['inferred']})"
     st.caption(
         f"{t('country_extraction', lang)}: {_stats['total']} {'件中' if lang == 'ja' else 'articles —'} "
-        f"{t('success', lang)} {_stats['success']} {'件' if lang == 'ja' else ''} / "
+        f"{t('success', lang)} {_stats['success']} {'件' if lang == 'ja' else ''}{_inferred_note} / "
         f"{t('broad', lang)} {_stats['broad']} {'件' if lang == 'ja' else ''} / "
         f"{t('unknown', lang)} {_stats['unknown']} {'件' if lang == 'ja' else ''}"
     )

@@ -552,6 +552,43 @@ _US_STATES_JA: list[str] = [
 _US_STATE_ALIASES: list[str] = _US_STATES_JA + _US_STATES_STRICT_EN + _US_STATES_EN
 
 
+# ── 1文字略記の国名（助詞が直後に続く形のみ）→ ISO3 ──────────────────────────
+
+# 「米」「英」等の単漢字は穀物・方角・複合語(欧米/南米/訪米/新米/単独/増加…)と
+# 衝突するため、次の 2 条件を同時に満たす場合だけ国と判定する:
+#   (1) 直前が漢字・かな以外（文頭・空白・句読点・括弧など）
+#   (2) 直後が助詞（で・の・に・へ・は）
+# 「米国」「豪州」等の 2 文字形は通常の別名テーブル側で先に解決される。
+# 「中」は「中で」「中の」等の一般用法が多すぎるため意図的に含めない
+# （「中国」は既存の別名照合で解決する）。
+_ABBR_ISO3: dict[str, str] = {
+    "米": "USA",
+    "英": "GBR",
+    "仏": "FRA",
+    "独": "DEU",
+    "豪": "AUS",
+    "加": "CAN",
+    "印": "IND",
+    "韓": "KOR",
+    "露": "RUS",
+}
+
+_ABBR_PARTICLES = "でのにへは"
+
+_ABBR_PATTERN = re.compile(
+    # 直前が かな/漢字 でないこと。ただし並列の「と」「や」の直後は許可する
+    # （「米と英で流行」など）。「もち米で」「タイ米で」等は直前が かな/カナ なので弾かれる。
+    r"(?:(?<![぀-ヿ㐀-鿿ｦ-ﾟ])|(?<=[とや]))"
+    r"([" + "".join(_ABBR_ISO3) + r"])"
+    r"(?=[" + _ABBR_PARTICLES + r"])"
+)
+
+
+def _match_abbrev_countries(text: str) -> list[tuple[int, str]]:
+    """Return (position, iso3) for single-kanji country abbreviations followed by a particle."""
+    return [(m.start(), _ABBR_ISO3[m.group(1)]) for m in _ABBR_PATTERN.finditer(text)]
+
+
 # ── Region keywords (broad geographic terms, not specific countries) ──────────
 
 _REGION_KEYWORDS: list[tuple[str, str]] = sorted([
@@ -671,6 +708,7 @@ def extract_countries(text: str) -> list[str]:
     Scans title + description/summary combined text. Uses longest-match-first to
     resolve ambiguous sub-strings (e.g. 'コンゴ民主共和国' before 'コンゴ').
     Matched spans are blanked to prevent shorter aliases from overlapping.
+    Single-kanji abbreviations ('米で', '英の', …) are matched afterwards.
 
     When no country name matches, falls back to domestic markers: Japanese
     ministries/institutions → JPN, then US state names → USA.
@@ -691,6 +729,14 @@ def extract_countries(text: str) -> list[str]:
             seen_iso3.add(iso3)
             # Blank out the matched span so shorter sub-aliases cannot overlap
             working = working[:pos] + "\x00" * len(alias) + working[pos + len(alias):]
+
+    # 単漢字略記（「米で」「英の」…）。blank 済みの working ではなく元テキストを見る
+    # （\x00 で埋まると「タイ米」の直前判定が壊れるため）。「米国」は直後が助詞で
+    # ないので二重には拾わず、同じ ISO3 は seen_iso3 で弾かれる。
+    for pos, iso3 in _match_abbrev_countries(text):
+        if iso3 not in seen_iso3:
+            matches.append((pos, iso3))
+            seen_iso3.add(iso3)
 
     matches.sort(key=lambda x: x[0])
     result = [iso3 for _, iso3 in matches]

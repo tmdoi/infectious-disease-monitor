@@ -97,13 +97,28 @@ The app opens at `http://localhost:8501`. On first launch, outbreak data is fetc
 ├── src/
 │   ├── fetchers/               # Data fetchers (WHO, ECDC, Yahoo, Google)
 │   ├── parsers/                # Country extraction, disease filter, source whitelist
-│   ├── data/                   # Glossary, UI labels, mock articles
+│   ├── data/                   # Glossary, UI labels, disease default countries, mock articles
 │   ├── visualizers/            # Choropleth map builder
 │   ├── translator.py           # argos-translate wrapper + cache
 │   └── cache.py                # JSON cache management
 └── data/
     └── cache/                  # Runtime cache — excluded from Git
 ```
+
+## Country Inference (Provisional Setting)
+
+Articles whose title contains no country, place, US state, or broad-scope marker can be
+assigned a **default country per disease**, defined in `src/data/disease_defaults.py`.
+Such articles are marked "(inferred)" in the UI and logged at INFO level.
+
+| Disease | Default country | Reason |
+|---------|-----------------|--------|
+| Cyclosporiasis | USA | The 2026 lettuce-borne outbreak is centered on the United States |
+
+> ⚠️ **This mapping is provisional and depends on the current outbreak situation.**
+> If the affected region shifts, the inference becomes wrong. Review it periodically and
+> delete the entry once the outbreak subsides — `DISEASE_DEFAULT_COUNTRY` is the only
+> place that needs editing.
 
 ## Disclaimer
 
@@ -121,6 +136,12 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 [MIT](LICENSE)
 
 ## Changelog
+
+### 2026-08-05 (2)
+- Added single-kanji country abbreviations (米/英/仏/独/豪/加/印/韓/露) → ISO3. Matched only when preceded by a non-kana/kanji character and followed by a particle (で・の・に・へ・は), so 「新米の」「欧米で」「訪米」「単独で」「増加の」 are not misread
+- Titles ending in a '/'-separated photo-credit chain ('…/Melanie Moser/CDC/AP') are now cleaned in `clean_text()` before country extraction and display; stripping requires a known credit keyword and enough remaining text, so titles like 'A(H5N1)/A(H7N9)' are left intact
+- Added per-disease default country inference (`src/data/disease_defaults.py`) applied only to otherwise-unknown articles; inferred articles carry `inferred=True`, are labelled "(inferred)" in the UI, and log `INFO inferred country … from disease default (…)`. Initial setting: Cyclosporiasis → USA (provisional — see "Country Inference")
+- Result on a live fetch: unknown articles dropped from 20 to 14, USA-linked articles rose from 5 to 11
 
 ### 2026-08-05
 - Added Cyclosporiasis as the 19th monitored disease (EN keywords: Cyclospora / Cyclosporiasis / Cyclospora cayetanensis, JA: サイクロスポラ); registered in the glossary and translator, plus JA/EN Google News queries

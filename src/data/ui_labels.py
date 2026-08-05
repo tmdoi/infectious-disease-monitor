@@ -50,6 +50,7 @@ _LABELS: dict[str, dict[str, str]] = {
         "success": "成功",
         "broad": "広域",
         "unknown": "不明",
+        "inferred": "推定",
         # Language toggle
         "lang_label": "言語 / Language",
         # Translation
@@ -144,6 +145,7 @@ _LABELS: dict[str, dict[str, str]] = {
         "success": "success",
         "broad": "broad",
         "unknown": "unknown",
+        "inferred": "inferred",
         # Language toggle
         "lang_label": "言語 / Language",
         # Translation
