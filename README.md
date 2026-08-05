@@ -137,6 +137,11 @@ This project was developed with the help of [Claude Code](https://claude.ai/code
 
 ## Changelog
 
+### 2026-08-05 (3)
+- Suppressed the misleading `WARNING no countries found` for articles that are subsequently resolved by a per-disease default country (`extract_countries()` now takes `log_unmatched`)
+- Moved the inference log from the root logger to `src.parsers.country` (new `log_inferred_country()`), so it lands in `country_extraction.log` with the other country-detection logs
+- The "(inferred)" marker now leads the country cell (`※(inferred) United States`) and the country column is widened, so the marker is never cut off in the article table
+
 ### 2026-08-05 (2)
 - Added single-kanji country abbreviations (米/英/仏/独/豪/加/印/韓/露) → ISO3. Matched only when preceded by a non-kana/kanji character and followed by a particle (で・の・に・へ・は), so 「新米の」「欧米で」「訪米」「単独で」「増加の」 are not misread
 - Titles ending in a '/'-separated photo-credit chain ('…/Melanie Moser/CDC/AP') are now cleaned in `clean_text()` before country extraction and display; stripping requires a known credit keyword and enough remaining text, so titles like 'A(H5N1)/A(H7N9)' are left intact

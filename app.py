@@ -78,7 +78,11 @@ def _fetch_with_fallback(name: str, fn) -> tuple[list[dict], str | None]:
 def _enrich(a: dict) -> dict:
     """Add iso3_list, scope (country/broad/unknown), region, and inferred to an article dict."""
     text = (a.get("title", "") + " " + a.get("summary", "")).strip()
-    iso3s = country_parser.extract_countries(text)
+    disease_ja = a.get("disease_ja", "")
+    # 疾患ごとの既定国（暫定設定）がある場合は、未検出でも推定で埋めるため
+    # country.py 側の「no countries found」WARNING を抑止する
+    default_iso3 = disease_defaults.default_country(disease_ja)
+    iso3s = country_parser.extract_countries(text, log_unmatched=not default_iso3)
     a["iso3_list"] = iso3s
     a["inferred"] = False
     if iso3s:
@@ -91,17 +95,13 @@ def _enrich(a: dict) -> dict:
         a["scope"] = "broad"
         return a
 
-    # 地域不明の記事だけ、疾患ごとの既定国（暫定設定）で推定する
-    default_iso3 = disease_defaults.default_country(a.get("disease_ja", ""))
+    # 地域不明の記事だけ、疾患ごとの既定国で推定する
     if default_iso3:
         a["iso3_list"] = [default_iso3]
         a["scope"] = "country"
         a["inferred"] = True
-        logging.info(
-            "inferred country %s from disease default (%s) in %r",
-            default_iso3,
-            disease_id_from_ja(a.get("disease_ja", "")) or a.get("disease_ja", ""),
-            text[:100],
+        country_parser.log_inferred_country(
+            default_iso3, disease_id_from_ja(disease_ja) or disease_ja, text
         )
         return a
 
@@ -238,7 +238,7 @@ def _tr(title: str, lang: str) -> str:
 
 
 def _inferred_mark(a: dict, lang: str) -> str:
-    """Return a '(推定)' / '(inferred)' suffix for articles whose country was guessed."""
+    """Return a ' (推定)' / ' (inferred)' suffix for articles whose country was guessed."""
     return f" ({t('inferred', lang)})" if a.get("inferred") else ""
 
 
@@ -247,7 +247,8 @@ def _country_cell(a: dict, lang: str) -> str:
     iso3s = a.get("iso3_list", [])
     if iso3s:
         names = ", ".join(country_parser.get_country_name(c, lang) for c in iso3s)
-        return names + _inferred_mark(a, lang)
+        # 列幅で末尾が切れても分かるよう、推定の印は先頭に置く
+        return f"※({t('inferred', lang)}) {names}" if a.get("inferred") else names
     region = a.get("region")
     return f"[{region}]" if region else t("region_unknown", lang)
 
@@ -621,7 +622,13 @@ if _all_map_articles or st.session_state.articles_who:
             pd.DataFrame(display_articles).sort_values(t("date_col", lang), ascending=False),
             width='stretch',
             hide_index=True,
-            column_config={"URL": st.column_config.LinkColumn(t("link", lang), display_text=t("open", lang))},
+            column_config={
+                # 「※(推定) アメリカ合衆国」が省略されないよう国カラムを広めに取る
+                t("country_col", lang): st.column_config.TextColumn(
+                    t("country_col", lang), width="medium"
+                ),
+                "URL": st.column_config.LinkColumn(t("link", lang), display_text=t("open", lang)),
+            },
         )
     else:
         st.info(t("no_articles_filtered", lang))

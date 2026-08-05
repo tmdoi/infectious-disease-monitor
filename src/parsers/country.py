@@ -702,7 +702,15 @@ def _fallback_iso3(text: str) -> tuple[str, str] | None:
     return None
 
 
-def extract_countries(text: str) -> list[str]:
+def log_inferred_country(iso3: str, reason: str, text: str) -> None:
+    """Log that a country was filled in by inference instead of matched in the text."""
+    logger.info(
+        "inferred country %s from disease default (%s) in %r",
+        iso3, reason, text[:100].replace("\n", " "),
+    )
+
+
+def extract_countries(text: str, log_unmatched: bool = True) -> list[str]:
     """Extract ISO3 codes for all countries mentioned in text, in order of appearance.
 
     Scans title + description/summary combined text. Uses longest-match-first to
@@ -712,6 +720,9 @@ def extract_countries(text: str) -> list[str]:
 
     When no country name matches, falls back to domestic markers: Japanese
     ministries/institutions → JPN, then US state names → USA.
+
+    Pass log_unmatched=False when the caller has its own fallback (e.g. a per-disease
+    default country) so an unmatched text is not logged as a WARNING first.
     """
     if not text.strip():
         return []
@@ -754,7 +765,7 @@ def extract_countries(text: str) -> list[str]:
         logger.debug("countries=%s from %r", result, preview)
     elif is_broad_scope(text):
         logger.info("broad scope detected (no specific countries) in %r", preview)
-    else:
+    elif log_unmatched:
         logger.warning("no countries found in %r", preview)
 
     return result
